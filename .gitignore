@@ -1,5 +1,8 @@
+#ignore pycharm things
 *.pyc
 ./idea
+
+#ignore temporary gameplay files
 Proj-2-ref/end_game
 Proj-2-ref/first_four_moves
 Proj-2-ref/move_file
