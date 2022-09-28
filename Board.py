@@ -1,6 +1,6 @@
 from cgitb import small
 import copy
-from math import floor
+from math import fabs, floor
 from nis import match
 
 
@@ -62,7 +62,7 @@ class Board:
         won_local_board = self.evalLocalBoard(move)
 
         if(calc_heuristic):
-            board_value += (self.heuristic(self, move, won_local_board))
+            board_value += (self.heuristic(self, move, won_local_board)) * (-1 if self.get_curr_player() != self.player else 1)
         
 
     
