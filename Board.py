@@ -363,9 +363,7 @@ class Board:
                 move: last move played in the format of (small_board_index, local_board_position)
 
             Returns:
-                boards value
-
-
+                board's value
         '''
         win_local = self.global_board[move[0]]
         bigBoardBlock = 0
