@@ -30,7 +30,6 @@ class AI:
         Returns:
             int: The heuristic value of the optimal move
         """
-        
         if depth == 0: 
             return board.get_heuristic()                                       # Get the heuristic value of the board state
 
@@ -56,7 +55,7 @@ class AI:
                 clone = board.deep_copy()                                      # Create a deep copy of the board
                 clone.make_move(move)                                          # Make a legal move in the deep copy
 
-                best = min(value, AI.alphabeta(clone, depth-1, a, b, True))    # Get the minimum value between the returning beta value and the current best
+                value = min(value, AI.alphabeta(clone, depth-1, a, b, True))    # Get the minimum value between the returning beta value and the current best
                 b = min(b, value)                                              # Get the minimum value between the passed in beta and the current best
                 
                 if a >= b:                                                     # If alpha is greater than or equal to beta
