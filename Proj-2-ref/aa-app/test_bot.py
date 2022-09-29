@@ -1,14 +1,30 @@
 from player import Player
-import time
-import random
+from Board import Board
+from time import sleep
+from threading import Thread
+from ai import AI
+from utility import State
 
-time_limit = 10
-player = Player("bot")
-print(player.team_name)
-while not player.check_end():
-     if(player.check_for_turn()):
-         print("My turn")
-         opponent_move = player.get_move()
-         time.sleep(3)
-         print(player.check_time())
-         player.make_move((opponent_move[1],random.randint(0,8)))
+def main():
+    player = Player("bot")
+    board = Board() 
+
+    print(f'[Initialized player]: {player.team_name}')           
+
+    while not player.check_end():  
+        player.read_first_four(board)  
+              
+        if player.check_for_turn():  
+            player.read_move(board)
+
+            opponent_move = player.last_move
+            print(player.last_move)
+            player_move = AI.determine_move(board, opponent_move) 
+            
+            board.new_move(player_move)
+            player.make_move(player_move)
+            
+            print("\n=============================")
+
+if __name__ == '__main__':
+    main()

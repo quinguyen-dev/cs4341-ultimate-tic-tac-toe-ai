@@ -2,12 +2,14 @@ from locale import strcoll
 import os.path
 import time
 from Board import Board
+from utility import State
 
 class Player:
 
     team_name = ""
     turn_start_time = None
     my_turn = False
+    last_move = ()
 
     def __init__(self, team_name):
         self.team_name = team_name
@@ -64,6 +66,10 @@ class Player:
             move_file.write(f'{self.team_name} {move[0]} {move[1]}')
             move_file.close()
 
+            move_file = open("../move_set", "a")
+            move_file.write(f'{self.team_name} {move[0]} {move[1]}\n')
+            move_file.close()
+
             while os.path.exists(f'../{self.team_name}.go'):
                 time.sleep(.1)
 
@@ -71,6 +77,25 @@ class Player:
             self.turn_start_time = None
         else:
             raise Exception("Not your turn")
+
+    def read_first_four(self, board: Board):
+        move = ""
+
+        flag = os.path.exists(f'../first_four_moves')
+        if board.represented_player == State.UNCLAIMED and flag:
+            for line in open("../first_four_moves"):
+                board.new_move(Player.parse_move(line))
+            
+            move = line
+
+            if self.team_name in line:
+                board.config_player(State.PLAYER_2)
+                print("Player 2")
+            else:
+                board.config_player(State.PLAYER_1)
+                print("Player 1")
+
+            self.last_move = Player.parse_move(move)
 
 
     def read_move(self, board: Board):
@@ -91,12 +116,9 @@ class Player:
 
                 board.new_move(Player.parse_move(move))
             else:
-                for line in open("../first_four_moves"):
-                    board.new_move(Player.parse_move(line))
-                move = line
+               return
 
-            move_tuple = Player.parse_move(move)
-            return move_tuple
+            self.last_move = Player.parse_move(move)
         else:
             raise Exception("Not your turn") 
 
