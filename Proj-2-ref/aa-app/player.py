@@ -93,6 +93,8 @@ class Player:
                     board.new_move(Player.parse_move(line))
                 move = line
 
+            print(move)
+
             move_tuple = Player.parse_move(move)
             return move_tuple
         else:

@@ -80,13 +80,13 @@ class Board:
         # Set the current player for this turn
         self.set_current_player()
 
-        self.board_array[move[0] * 9 + move[1]] = self.current_player.value # todo used to be + 1
+        self.board_array[move[0] * 9 + move[1]] = self.current_player # todo used to be + 1
         self.move_count += 1 # todo does this need to be here at this point?
 
         won_local_board = self.evaluate_local(move)
 
         if calc_heuristic:
-            accumulated_heuristic += self.heuristic(self, move, won_local_board) * (-1 if self.current_player.value != self.represented_player.value else 1)
+            accumulated_heuristic += self.heuristic(self, move, won_local_board) * (-1 if self.current_player != self.represented_player else 1)
     
 
     def evaluate_local(self, move: tuple[int, int]):
@@ -115,6 +115,7 @@ class Board:
 
         # Get the row stats of a local board and add the current player to its respective counter
         row_score = self.local_board_stats[local_board_pos][0][row_pos]
+        print(self.current_player)
         row_score += self.current_player # todo change this to active player
         scores.append(row_score) #add row to scores array
 
@@ -156,7 +157,7 @@ class Board:
 
         '''
         scores = []
-        player = self.current_player + 1 # todo what the fuck is this doing here and why is it + 1 when its not in local
+        player = self.current_player # todo what the fuck is this doing here and why is it + 1 when its not in local
         self.global_board_stats[3] += 1
 
         row_pos = floor(local_board_pos / 3)
@@ -410,7 +411,7 @@ class Board:
         global_board_adj =  0
         global_board_opp = 0
         
-        if win_local == self.represented_player.value: #won the board
+        if win_local == self.represented_player: #won the board
             win_local = 1
             global_board_block = self.evaluate_global(move[0])
             global_board_adj = self.move_adjacency(self.global_board, move[0], 0)
