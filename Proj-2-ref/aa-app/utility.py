@@ -1,7 +1,7 @@
 from enum import Enum
 
 class State():
-    DRAW = -1
+    DRAW = 10
     UNCLAIMED = 0
     PLAYER_1 = -1
     PLAYER_2 = 1
