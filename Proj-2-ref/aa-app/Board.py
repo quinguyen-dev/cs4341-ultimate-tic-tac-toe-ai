@@ -4,7 +4,7 @@ from utility import State
 
 class Board:
 
-    board_array = [-1] * 81
+    board_array = [0] * 81
 
     # Number of moves played
     move_count = 0 
