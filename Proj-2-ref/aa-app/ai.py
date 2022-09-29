@@ -12,23 +12,24 @@ class AI:
 
         return 0
     
+    
     @staticmethod
     def alphabeta(board: Board, depth: int, a: int, b: int, maximizing: bool):
-        """ Minimaxing algorithm with alpha beta pruning
+        """ Minimaxing algorithm with alpha beta pruning.
 
         Args:
-            board (Board): The UTTT Board object
-            depth (int): The current depth levels we have left for iterative deepening
-            a (int): α value
-            b (int): β value
+            board (Board): The UTTT Board object.
+            depth (int): The current depth levels we have left for iterative deepening.
+            a (int): α value.
+            b (int): β value.
             maximizing (bool): True if the algorithm is maximizing. False is minimizing.
 
         Todo: 
-            Make sure the program figures out which board it needs to check
-            Make sure to include if the node is terminal when the depth is 0
+            Make sure the program figures out which board it needs to check.
+            Make sure to include if the node is terminal when the depth is 0.
 
         Returns:
-            int: The heuristic value of the optimal move
+            int: The heuristic value of the optimal move.
         """
         if depth == 0: 
             return board.get_heuristic()                                       # Get the heuristic value of the board state
