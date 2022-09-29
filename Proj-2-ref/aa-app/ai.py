@@ -1,21 +1,33 @@
-import copy
+from copy import deepcopy
+from os import dup
 import sys
-from board import Board
+from Board import Board
 
 class AI:
 
     INFINITE = sys.maxsize
 
-    def __init__(self):
-        print('Initialized')
+    def determine_move(board: Board, prev: tuple[int, int]):  
+        best_move =  ()
+        best_score = -AI.INFINITE
 
-    def determine_move():
+        for potential in board.legal_moves(prev):
+            duplicate = board.clone()
+            duplicate.new_move(potential)
 
-        return 0
+            print(f'================== {potential} ============')
+            score = AI.alphabeta(duplicate, 2, -AI.INFINITE, AI.INFINITE, True, potential)
+            if (score > best_score):
+                best_score = score
+                best_move = potential
+        
+        print(f'This is the best move: {best_move}')
+
+        return best_move
     
     
     @staticmethod
-    def alphabeta(board: Board, depth: int, a: int, b: int, maximizing: bool):
+    def alphabeta(board: Board, depth: int, a: int, b: int, maximizing: bool, prev: tuple[int, int]):
         """ Minimaxing algorithm with alpha beta pruning.
 
         Args:
@@ -33,16 +45,19 @@ class AI:
             int: The heuristic value of the optimal move.
         """
         if depth == 0: 
-            return board.get_heuristic()                                       # Get the heuristic value of the board state
+            # todo return this value 0,0 
+            print(f'Heuristic {prev}: {board.heuristic(prev)}\n')
+            return board.heuristic(prev)                                       # Get the heuristic value of the board state
 
         if maximizing:
             value = -AI.INFINITE
             
-            for move in board.get_legal_moves():                               # For every possible move in the given board
-                clone = copy.deep_copy(board)                                     # Create a deep copy of the board
+            # todo once 
+            for move in board.legal_moves(prev):                               # For every possible move in the given board
+                clone = board.clone()                                     # Create a deep copy of the board
                 clone.new_move(move)                                          # Make a legal move in the deep copy
 
-                value = max(value, AI.alphabeta(clone, depth-1, a, b, False))  # Get the maximum value between the returning alpha value and the current best
+                value = max(value, AI.alphabeta(clone, depth-1, a, b, False, move))  # Get the maximum value between the returning alpha value and the current best
                 a = max(a, value)                                              # Get the maximum value between the passed in alpha and the current best
                 
                 if a >= b:                                                     # If alpha is greater than or equal to beta
@@ -53,11 +68,11 @@ class AI:
         else:
             value = AI.INFINITE
             
-            for move in board.get_legal_moves():                               # For every possible move in the given board
-                clone = copy.deep_copy(board)                                     # Create a deep copy of the board
-                clone.new_move(move)                                          # Make a legal move in the deep copy
+            for move in board.legal_moves(prev):                               # For every possible move in the given board
+                clone = board.clone()                                    # Create a deep copy of the board
+                clone.new_move(move)        # Make a legal move in the deep copy
 
-                value = min(value, AI.alphabeta(clone, depth-1, a, b, True))    # Get the minimum value between the returning beta value and the current best
+                value = min(value, AI.alphabeta(clone, depth-1, a, b, True, move))    # Get the minimum value between the returning beta value and the current best
                 b = min(b, value)                                              # Get the minimum value between the passed in beta and the current best
                 
                 if a >= b:                                                     # If alpha is greater than or equal to beta

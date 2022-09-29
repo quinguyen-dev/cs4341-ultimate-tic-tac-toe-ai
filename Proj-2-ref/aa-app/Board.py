@@ -24,31 +24,40 @@ class Board:
 
     # The heuristic value of the global board
     accumulated_heuristic = 0
-    
-    # def __init__(self, player: int):
-    #     '''Constructs a board object
 
-    #         Args:
-    #             player: which player is the agent representing
-    #     '''
-    #     self.player = player 
-
-    # def __init__(self, represented_player: State):
-    #     '''Constructs a board object
-
-    #         Args:
-    #             player: which player is the agent representing
-    #     '''
-    #     self.represented_player = represented_player 
-
-    def __init__(self):
-        ''' Constructs a board object
+    def __init__(self, represented_player: State):
+        '''Constructs a board object
 
             Args:
                 player: which player is the agent representing
         '''
-    
-    # todo 0 is player 1 and 1 is player 2
+        self.represented_player = represented_player 
+
+    def clone(self):
+        '''
+            creates clone of board object
+
+            returns
+                new board object that has deepcopy of attributes from self
+        
+        '''
+
+        new_board = Board(self.represented_player)
+        new_board.board_array = copy.deepcopy(self.board_array)
+        new_board.move_count = copy.deepcopy(self.move_count)
+        
+        new_board.represented_player = copy.deepcopy(self.represented_player)
+        new_board.represented_opponent = copy.deepcopy(self.represented_opponent)
+
+        new_board.global_board = copy.deepcopy(self.global_board)
+
+        new_board.global_board_stats = copy.deepcopy(self.global_board_stats)
+        new_board.local_board_stats = copy.deepcopy(self.local_board_stats)
+
+        new_board.accumulated_heuristic = copy.deepcopy(self.accumulated_heuristic)
+
+        return new_board
+
 
     def set_player(self, represented_player: State):
         self.represented_player = represented_player
@@ -89,7 +98,7 @@ class Board:
 
         if calc_heuristic:
             accumulated_heuristic += self.heuristic(self, move, won_local_board) * (-1 if self.current_player != self.represented_player else 1)
-    
+
 
     def evaluate_local(self, move: tuple[int, int]):
         ''' Checks to see if the local board that the move was played on has been won or drawn. Changes status of small board in global_board
@@ -117,7 +126,6 @@ class Board:
 
         # Get the row stats of a local board and add the current player to its respective counter
         row_score = self.local_board_stats[local_board_pos][0][row_pos]
-        print(self.current_player)
         row_score += self.current_player # todo change this to active player
         scores.append(row_score) #add row to scores array
 
@@ -142,7 +150,7 @@ class Board:
                 self.evaluate_global(local_board_pos) # Check if winning a small board has won a larger board
                 return self.current_player #board is won 
         
-        # If the number of moves is nine (max), return a draw
+        # If the number of moves is nine (max), return a draw.
         if self.local_board_stats[local_board_pos][3] == 9:
             self.global_board[local_board_pos] = State.DRAW
             self.evaluate_global(local_board_pos) # Update global stats
@@ -208,7 +216,7 @@ class Board:
         return State.UNCLAIMED #game is not over
 
 
-    def block_opponent(board: list, relative_move:int, index_offset:int, self): #did the last move block the opponent?
+    def block_opponent(self, board: list, relative_move:int, index_offset:int): #did the last move block the opponent?
         ''' Checks to see if an opponent's win was blocked 
 
             Args:
@@ -262,7 +270,7 @@ class Board:
             case 5: #middle right
                 if(board[index-1] == opp and board[index+1] == opp): #row
                     blocked +=1
-                if(board[index-3] == opp and board[index+6] == opp): #col
+                if(board[index-3] == opp and board[index+3] == opp): #col
                     blocked += 1
             case 6: #bottom left
                 if(board[index+1] == opp and board[index+2] == opp): #row
@@ -286,7 +294,7 @@ class Board:
         return blocked
 
 
-    def move_adjacency(board: list, relative_move:int, index_offset:int, self): #was the last move adjacent to one of your previous moves
+    def move_adjacency(self, board: list, relative_move:int, index_offset:int): #was the last move adjacent to one of your previous moves
         '''Determines the number of adjacent moves that are of the same type and can lead to a win
 
             Args:
@@ -338,7 +346,7 @@ class Board:
             case 5: #middle right
                 if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
                     adjacent +=1
-                if(board[index-3] == self.current_player or board[index+6] == self.current_player): #col
+                if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
                     adjacent += 1
             case 6: #bottom left
                 if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
@@ -362,7 +370,7 @@ class Board:
         return adjacent
 
 
-    def board_opportunity(board: list, relative_move: int):
+    def board_opportunity(self, board: list, relative_move: int):
         '''Determines the number of possible wins from a position on an empty board
 
             Args:
@@ -398,7 +406,7 @@ class Board:
         return opportunity 
 
     
-    def legal_moves(move: list, self):
+    def legal_moves(self, move: tuple[int, int]):
         '''Determines the set if legal moves based on the current board
 
             Args:
@@ -407,20 +415,21 @@ class Board:
             Returns
                 list of legal moves in the format of (small_board_index, local_board_position)
         '''
-        legal_moves = ()
-        if self.global_board[move[0]] != 0:
+        legal_moves = []
+        if self.global_board[move[1]] != 0: 
             for i in range(0, 81):
-                if self.board_array[i]== State.DRAW:
+                if self.board_array[i] == State.DRAW:
                     legal_moves.append((floor(i/9), i%9))
         else:
             for i in range(0,9):
-                position = move[0]*9+i
-                if(self.board_array[position]==-1):
-                    legal_moves.append(position)
+                position = move[1] * 9 + i
+                if self.board_array[position] == 0:
+                    legal_moves.append((move[1], i))
+
         return legal_moves
 
 
-    def heuristic( move: list, self):
+    def heuristic(self, move: list):
         '''
             Calculates heuristic of current board state
 
@@ -435,18 +444,18 @@ class Board:
         global_board_adj =  0
         global_board_opp = 0
         
-        if win_local == self.represented_player: #won the board
+        if win_local == self.current_player: #won the board
             win_local = 1
             global_board_block = self.block_opponent(self.global_board, move[0], 0)
             global_board_adj = self.move_adjacency(self.global_board, move[0], 0)
-            global_board_opp = self.board_opportunity(self.global_board, move[0], 0)
+            global_board_opp = self.board_opportunity(self.global_board, move[0])
         elif win_local == -1: #drew the board
             win_local = 0.5
             global_board_block = self.block_opponent(self.global_board, move[0], 0)
         else:
             win_local = 0
         
-        global_win = self.global_board_eval(move[0], True)
+        global_win = self.evaluate_global(move[0], True)
         if global_win == self.represented_player:
             global_win = 1
         elif global_win == State.DRAW:
@@ -459,6 +468,12 @@ class Board:
 
         #weights of each heuristic minus penalty for making a move that does nothing
         return (blocked_opp*20) + (adj_bonus*5) + (win_local*100) + (global_board_adj*200) + (global_board_block*150) + (global_board_opp*5) + (global_win*400) - 20
+
+    def printBoard(self): 
+        for i in range(len(self.board_array)):
+            if i is not 0 and i % 9 == 0: 
+                print("\n")
+            print(f'{self.board_array[i]} ', end = '')
 
 
 

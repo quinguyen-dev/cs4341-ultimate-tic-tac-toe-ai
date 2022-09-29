@@ -50,7 +50,7 @@ class Player:
         return os.path.exists("../end_game")
 
 
-    def make_move(self, move):
+    def make_move(self, move: tuple[int, int]):
         """ Makes a move on the board.
 
         Args:
@@ -61,7 +61,7 @@ class Player:
         """
         if self.my_turn:
             move_file = open("../move_file", "w")
-            move_file.write(self.team_name + " " + str(move[0]) + " " + str(move[1]))
+            move_file.write(f'{self.team_name} {move[0]} {move[1]}')
             move_file.close()
 
             while os.path.exists(f'../{self.team_name}.go'):
@@ -73,7 +73,7 @@ class Player:
             raise Exception("Not your turn")
 
 
-    def read_move(self, board: Board | None):
+    def read_move(self, board: Board):
         """ Get either the first four moves or the opponents move.
 
         Raises:
@@ -88,12 +88,12 @@ class Player:
                 move_file = open("../move_file", "r")
                 move = move_file.read()
                 move_file.close()
+
+                board.new_move(Player.parse_move(move))
             else:
                 for line in open("../first_four_moves"):
                     board.new_move(Player.parse_move(line))
                 move = line
-
-            print(move)
 
             move_tuple = Player.parse_move(move)
             return move_tuple

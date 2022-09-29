@@ -1,29 +1,23 @@
-import time
-import random
 from player import Player
 from Board import Board
+from time import sleep
+from threading import Thread
+from ai import AI
+from utility import State
 
 def main():
     player = Player("artificial_andys")
-    board = Board()
+    board = Board(State.PLAYER_1)
 
-    print(f'[Initialized player]: {player.team_name}')
+    print(f'[Initialized player]: {player.team_name}')           
 
-    while not player.check_end():                                     
-        if player.check_for_turn():                                  
-            print("============== My turn ==============")            
-            opponent_move = player.read_move(board)                         # Get the opponents last move
-
-            # update opponents move here
-
-            print(" ============== Sleep ==============")
-            time.sleep(2.5)
-
-            pass # Make the move here
+    while not player.check_end():                   
+        if player.check_for_turn():  # Sets the beginning time
+            opponent_move = player.read_move(board)
+            player_move = AI.determine_move(board, opponent_move) 
+            # player.make_move(player_move)
+            break
             
-            print(player.check_time())
-            # player.make_move((opponent_move[1], random.randint(0,8))) # This will be the tuple that we generate
-
 
 if __name__ == '__main__':
     main()
