@@ -4,13 +4,14 @@ from utility import State
 
 class Board:
 
-    board_array = [-1] * 81
+    board_array = [0] * 81
 
     # Number of moves played
     move_count = 0 
-    current_player = State.UNCLAIMED;
+    #the player who made the last move
+    current_player = State.UNCLAIMED
 
-    # Player who made the last move (either player 1 or player 2)
+    # Player the agent represents (either player 1 or player 2)
     represented_player = State.UNCLAIMED
 
     # Possible values: State.UNCLAIMED (0), State.PLAYER_1 (1), State.PLAYER_2 (2), 
@@ -114,29 +115,29 @@ class Board:
 
         # Get the row stats of a local board and add the current player to its respective counter
         row_score = self.local_board_stats[local_board_pos][0][row_pos]
-        row_score += self.get_current_player() # todo change this to active player
+        row_score += self.current_player # todo change this to active player
         scores.append(row_score) #add row to scores array
 
         # Get the column stats of a local board and add the current player to its respective counter
         col_score = self.local_board_stats[local_board_pos][1][col_pos]
-        col_score += self.get_current_player() # todo change this to active player and make sure this is a reference
+        col_score += self.current_player # todo change this to active player and make sure this is a reference
         scores.append(col_score) #add col to scores
         
         if local_board_move % 4 == 0: # Check the anti-diagonal
             anti_diag_score = self.local_board_stats[local_board_pos][2][1]
-            anti_diag_score += self.get_current_player() # todo change this to active player
+            anti_diag_score += self.current_player # todo change this to active player
             scores.append(anti_diag_score) 
         elif local_board_move % 2 == 0: # Check the diagonal 
             diag_score = self.local_board_stats[local_board_pos][2][0]
-            diag_score += self.get_current_player() # todo change this to active player
+            diag_score += self.current_player # todo change this to active player
             scores.append(diag_score)
 
         # Check if a win condition has been met
         for score in scores: 
-            if score == (self.get_current_player() * 3): # todo ask about this
-                self.global_board[local_board_pos] = self.get_current_player() # Updates the closed status of the small board on the global list # todo change this to active player
+            if score == (self.current_player * 3): # todo ask about this
+                self.global_board[local_board_pos] = self.current_player # Updates the closed status of the small board on the global list # todo change this to active player
                 self.evaluate_global(local_board_pos) # Check if winning a small board has won a larger board
-                return self.get_current_player() #board is won 
+                return self.current_player #board is won 
         
         # If the number of moves is nine (max), return a draw
         if self.local_board_stats[local_board_pos][3] == 9:
@@ -155,7 +156,7 @@ class Board:
 
         '''
         scores = []
-        player = self.get_current_player() + 1 # todo what the fuck is this doing here and why is it + 1 when its not in local
+        player = self.current_player + 1 # todo what the fuck is this doing here and why is it + 1 when its not in local
         self.global_board_stats[3] += 1
 
         row_pos = floor(local_board_pos / 3)
@@ -279,59 +280,59 @@ class Board:
         adjacent = 0
         match relative_move:
             case 0: #top left
-                if(board[index+1] == self.get_current_player() or board[index+2] == self.get_current_player()): #check row block
+                if(board[index+1] == self.current_player or board[index+2] == self.current_player): #check row block
                     adjacent +=1
-                if(board[index+3] == self.get_current_player() or board[index+6] == self.get_current_player()): #check col block
+                if(board[index+3] == self.current_player or board[index+6] == self.current_player): #check col block
                     adjacent += 1
-                if(board[index+4] == self.get_current_player() or board[index+8] == self.get_current_player()): #check diagonal
+                if(board[index+4] == self.current_player or board[index+8] == self.current_player): #check diagonal
                     adjacent += 1
             case 1: #top middle
-                if(board[index-1] == self.get_current_player() or board[index+1] == self.get_current_player()): #row
+                if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
                     adjacent +=1
-                if(board[index+3] == self.get_current_player() or board[index+6] == self.get_current_player()): #col
+                if(board[index+3] == self.current_player or board[index+6] == self.current_player): #col
                     adjacent += 1
             case 2: #top right
-                if(board[index-2] == self.get_current_player() or board[index-1] == self.get_current_player()): #row
+                if(board[index-2] == self.current_player or board[index-1] == self.current_player): #row
                     adjacent +=1
-                if(board[index+3] == self.get_current_player() or board[index+6] == self.get_current_player()): #col
+                if(board[index+3] == self.current_player or board[index+6] == self.current_player): #col
                     adjacent += 1
             case 3: #middle left
-                if(board[index+1] == self.get_current_player() or board[index+2] == self.get_current_player()): #row
+                if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
                     adjacent +=1
-                if(board[index-3] == self.get_current_player() or board[index+3] == self.get_current_player()): #col
+                if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
                     adjacent += 1
             case 4: #center
-                if(board[index-1] == self.get_current_player() or board[index+1] == self.get_current_player()): #row
+                if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
                     adjacent +=1
-                if(board[index-3] == self.get_current_player() or board[index+3] == self.get_current_player()): #col
+                if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
                     adjacent += 1
-                if(board[index-4] == self.get_current_player() or board[index+4] == self.get_current_player()): #diag
+                if(board[index-4] == self.current_player or board[index+4] == self.current_player): #diag
                     adjacent +=1
-                if(board[index-2] == self.get_current_player() or board[index+2] == self.get_current_player()): #antidiag
+                if(board[index-2] == self.current_player or board[index+2] == self.current_player): #antidiag
                     adjacent += 1 
             case 5: #middle right
-                if(board[index-1] == self.get_current_player() or board[index+1] == self.get_current_player()): #row
+                if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
                     adjacent +=1
-                if(board[index-3] == self.get_current_player() or board[index+6] == self.get_current_player()): #col
+                if(board[index-3] == self.current_player or board[index+6] == self.current_player): #col
                     adjacent += 1
             case 6: #bottom left
-                if(board[index+1] == self.get_current_player() or board[index+2] == self.get_current_player()): #row
+                if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
                     adjacent +=1
-                if(board[index-3] == self.get_current_player() or board[index-6] == self.get_current_player()): #col
+                if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
                     adjacent += 1
-                if(board[index-2] == self.get_current_player() or board[index-4] == self.get_current_player()): #antidiag
+                if(board[index-2] == self.current_player or board[index-4] == self.current_player): #antidiag
                     adjacent +=1
             case 7: #bottom middle
-                if(board[index-1] == self.get_current_player() or board[index+1] == self.get_current_player()): #row
+                if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
                     adjacent +=1
-                if(board[index-3] == self.get_current_player() or board[index-6] == self.get_current_player()): #col
+                if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
                     adjacent += 1
             case 8: #bottom right
-                if(board[index-1] == self.get_current_player() or board[index-2] == self.get_current_player()): #row
+                if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
                     adjacent +=1
-                if(board[index-3] == self.get_current_player() or board[index-6] == self.get_current_player()): #col
+                if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
                     adjacent += 1
-                if(board[index-4] == self.get_current_player() or board[index-8] == self.get_current_player()): #diag
+                if(board[index-4] == self.current_player or board[index-8] == self.current_player): #diag
                     adjacent += 1
         return adjacent
 

@@ -1,7 +1,7 @@
 import time
 import random
 from player import Player
-from board import Board
+from Board import Board
 
 def main():
     player = Player("artificial_andys")

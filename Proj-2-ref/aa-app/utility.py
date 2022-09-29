@@ -3,8 +3,8 @@ from enum import Enum
 class State(Enum):
     DRAW = -1,
     UNCLAIMED = 0,
-    PLAYER_1 = 1,
-    PLAYER_2 = 2,
+    PLAYER_1 = -1,
+    PLAYER_2 = 1,
 
     ROW = 0, 
     COL = 1,

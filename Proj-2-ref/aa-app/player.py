@@ -1,7 +1,7 @@
 from locale import strcoll
 import os.path
 import time
-from board import Board
+from Board import Board
 
 class Player:
 
