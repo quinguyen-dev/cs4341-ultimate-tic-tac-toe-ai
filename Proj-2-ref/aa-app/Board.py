@@ -4,7 +4,7 @@ from utility import State
 
 class Board:
 
-    board_array = [0] * 81
+    board_array = [State.UNCLAIMED] * 81
 
     # Number of moves played
     move_count = 0 
@@ -13,6 +13,7 @@ class Board:
 
     # Player the agent represents (either player 1 or player 2)
     represented_player = State.UNCLAIMED
+    represented_opponent = State.UNCLAIMED
 
     # Possible values: State.UNCLAIMED (0), State.PLAYER_1 (1), State.PLAYER_2 (2), 
     global_board = [State.UNCLAIMED for i in range(9)] 
@@ -51,6 +52,7 @@ class Board:
 
     def set_player(self, represented_player: State):
         self.represented_player = represented_player
+        self.represented_opponent = (State.PLAYER_1 if (represented_player != State.PLAYER_1) else State.PLAYER_2)
         
 
     def get_current_player(self):
@@ -96,10 +98,10 @@ class Board:
                 move: format of (small_board_index, local_board_position)
             
             Returns:
-                1 if Player 1 won 
-                2 if Player 2 won
-                -1 if neither player won (draw)
-                0 if board is not closed
+                State.Player1 if Player 1 won 
+                State.Player2 if Player 2 won
+                State.Draw if neither player won (draw)
+                State.Unclaimed if board is not closed
         
         '''
         scores = []
@@ -142,12 +144,13 @@ class Board:
         
         # If the number of moves is nine (max), return a draw
         if self.local_board_stats[local_board_pos][3] == 9:
-            self.global_board[local_board_pos] = -1
+            self.global_board[local_board_pos] = State.DRAW
+            self.evaluate_global(local_board_pos) # Update global stats
             return State.DRAW
 
         return State.UNCLAIMED
 
-    def evaluate_global(self, local_board_pos: int):
+    def evaluate_global(self, local_board_pos: int, heuristic = False):
         ''' Evaluates win conditions for the big board
 
             Args:
@@ -157,31 +160,52 @@ class Board:
 
         '''
         scores = []
-        player = self.current_player # todo what the fuck is this doing here and why is it + 1 when its not in local
-        self.global_board_stats[3] += 1
+        player = self.current_player
 
         row_pos = floor(local_board_pos / 3)
         col_pos = local_board_pos % 3
 
-        row_score = self.global_board_stats[0][row_pos] 
-        row_score += player  
-        scores.append(row_pos) 
+        if(heuristic):
+            row_score = self.global_board_stats[0][row_pos]  
+            scores.append(row_score) 
 
-        col_score = self.global_board_stats[1][col_pos] 
-        col_score += player 
-        scores.append(col_score) 
+            col_score = self.global_board_stats[1][col_pos] 
+            scores.append(col_score) 
         
-        if local_board_pos % 4 == 0: # Check anti-diagonal
-            anti_diag_score = self.global_board_stats[2][1]
-            anti_diag_score += player
-            scores.append(anti_diag_score)  # todo what is happenign here
-        elif local_board_pos % 2 == 0: # Check diagonal
-            diag_score = self.global_board_stats[2][0] 
-            diag_score += player 
-            scores.append(diag_score) # todo what the fuck is this
+            if local_board_pos % 4 == 0: # Check anti-diagonal
+                anti_diag_score = self.global_board_stats[2][1]
+                scores.append(anti_diag_score)
+            elif local_board_pos % 2 == 0: # Check diagonal
+                diag_score = self.global_board_stats[2][0] 
+                scores.append(diag_score)
 
-        print('closed boards')
-        #TODO something with win conditions here
+        
+        else:
+            self.global_board_stats[3] += 1
+            row_score = self.global_board_stats[0][row_pos] 
+            row_score += player  
+            scores.append(row_score) 
+
+            col_score = self.global_board_stats[1][col_pos] 
+            col_score += player 
+            scores.append(col_score) 
+        
+            if local_board_pos % 4 == 0: # Check anti-diagonal
+                anti_diag_score = self.global_board_stats[2][1]
+                anti_diag_score += player
+                scores.append(anti_diag_score)
+            elif local_board_pos % 2 == 0: # Check diagonal
+                diag_score = self.global_board_stats[2][0] 
+                diag_score += player 
+                scores.append(diag_score)
+
+
+        for score in scores: #check each win condition
+            if score == self.current_player*3: #game is won
+                return self.current_player
+        if self.global_board_stats[3] == 9: #game is draw
+            return State.DRAW
+        return State.UNCLAIMED #game is not over
 
 
     def block_opponent(board: list, relative_move:int, index_offset:int, self): #did the last move block the opponent?
@@ -200,7 +224,7 @@ class Board:
                 number of wins that the move blocked
         
         '''
-        opp = ((self.get_current_player) + 1)%2
+        opp = self.represented_opponent
         index = relative_move + index_offset
         blocked = 0
         match relative_move:
@@ -312,7 +336,7 @@ class Board:
                 if(board[index-2] == self.current_player or board[index+2] == self.current_player): #antidiag
                     adjacent += 1 
             case 5: #middle right
-                if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
+                if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
                     adjacent +=1
                 if(board[index-3] == self.current_player or board[index+6] == self.current_player): #col
                     adjacent += 1
@@ -386,7 +410,7 @@ class Board:
         legal_moves = ()
         if self.global_board[move[0]] != 0:
             for i in range(0, 81):
-                if self.board_array[i]==-1:
+                if self.board_array[i]== State.DRAW:
                     legal_moves.append((floor(i/9), i%9))
         else:
             for i in range(0,9):
@@ -413,18 +437,28 @@ class Board:
         
         if win_local == self.represented_player: #won the board
             win_local = 1
-            global_board_block = self.evaluate_global(move[0])
+            global_board_block = self.block_opponent(self.global_board, move[0], 0)
             global_board_adj = self.move_adjacency(self.global_board, move[0], 0)
             global_board_opp = self.board_opportunity(self.global_board, move[0], 0)
         elif win_local == -1: #drew the board
             win_local = 0.5
-            global_board_block = self.evaluate_global(move[0])
+            global_board_block = self.block_opponent(self.global_board, move[0], 0)
+        else:
+            win_local = 0
+        
+        global_win = self.global_board_eval(move[0], True)
+        if global_win == self.represented_player:
+            global_win = 1
+        elif global_win == State.DRAW:
+            global_win = 0.25
+        else:
+            global_win = 0
 
         blocked_opp = self.block_opponent(self.board_array, move[1], move[0]*9)
         adj_bonus = self.move_adjacency(self.board_array, move[1], move[0]*9)
 
         #weights of each heuristic minus penalty for making a move that does nothing
-        return (win_local*100) + (global_board_adj*200) + (global_board_block*150) + (blocked_opp*20) + (adj_bonus*5) + (global_board_opp*5) - 20
+        return (blocked_opp*20) + (adj_bonus*5) + (win_local*100) + (global_board_adj*200) + (global_board_block*150) + (global_board_opp*5) + (global_win*400) - 20
 
 
 
