@@ -81,6 +81,10 @@ The clean() function has been update _again_ to be cross-platform and work on di
 The default screen size is smaller.
 The referee now handles incorrectly formatted moves more gracefully.
 
+## UPDATE TO V7 09/30/2022
+
+The referee now creates both .go files at the end of the game, as described in canvas.
+
 _________________________________________________________________________
 
 That is all! Have fun playing UTTT and finding fun ways to break my code...
