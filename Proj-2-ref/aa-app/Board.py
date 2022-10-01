@@ -420,6 +420,7 @@ class Board:
             Returns
                 list of legal moves in the format of (small_board_index, local_board_position)
         '''
+        
         legal_moves = []
         if self.global_board[move[1]] != 0: 
             for board_index in range(9):
