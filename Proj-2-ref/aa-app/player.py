@@ -21,7 +21,7 @@ class Player:
         Returns:
             bool: True if a '[team_name].go' file exist. False is not.
         """
-        self.my_turn = os.path.exists(f'/Users/michaeloconnor/Documents/WPI/Intro To AI/cs4341-ultimate-tic-tac-toe-ai/Proj-2-ref/{self.team_name}.go')
+        self.my_turn = os.path.exists(f'../{self.team_name}.go')
         if self.my_turn:
             self.turn_start_time = time.perf_counter()
 
@@ -81,9 +81,9 @@ class Player:
     def read_first_four(self, board: Board):
         move = ""
 
-        flag = os.path.exists(f'/Users/michaeloconnor/Documents/WPI/Intro To AI/cs4341-ultimate-tic-tac-toe-ai/Proj-2-ref/first_four_moves')
+        flag = os.path.exists(f'../first_four_moves')
         if board.represented_player == State.UNCLAIMED and flag:
-            for line in open("/Users/michaeloconnor/Documents/WPI/Intro To AI/cs4341-ultimate-tic-tac-toe-ai/Proj-2-ref/first_four_moves"):
+            for line in open("../first_four_moves"):
                 board.new_move(Player.parse_move(line))
             
             move = line
@@ -109,8 +109,8 @@ class Player:
         """
         if self.my_turn:
             move = ""
-            if os.path.getsize("/Users/michaeloconnor/Documents/WPI/Intro To AI/cs4341-ultimate-tic-tac-toe-ai/Proj-2-ref/move_file") > 0:
-                move_file = open("/Users/michaeloconnor/Documents/WPI/Intro To AI/cs4341-ultimate-tic-tac-toe-ai/Proj-2-ref/move_file", "r")
+            if os.path.getsize("../move_file") > 0:
+                move_file = open("../move_file", "r")
                 move = move_file.read()
                 move_file.close()
 

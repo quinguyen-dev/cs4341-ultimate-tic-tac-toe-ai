@@ -30,8 +30,11 @@ class AI:
                 max_threads: maximum number of threads the system is allowed to run
 
         '''
+        self.depth_one_moves.clear()
         self.depth_one_moves = board.legal_moves(prev) #save the list of legal moves
-        self.child_best_score = [-self.INFINITE in range(len(self.depth_one_moves))] #create a new array to hold 
+        print(f"\n\n\n================== {board.legal_moves(prev)}")
+        self.child_best_score.clear()
+        self.child_best_score = [(-self.INFINITE) for i in range(len(self.depth_one_moves))] #create a new array to hold 
         self.child_locks.clear() # empty list of mutex locks 
         thread_list = [] #holds Thread objects created 
 
@@ -48,6 +51,7 @@ class AI:
                         break
 
             #create a new thread that runs determine_move
+            print(f"move_num: {move_num}")
             thread_list.append(threading.Thread(target=self.determine_move,name=lock_num, args=(board, self.depth_one_moves[move_num], lock_num, move_num)))
             thread_list[-1].start() #start the thread
             
@@ -64,6 +68,8 @@ class AI:
             while thread.is_alive(): #while a thread is running
                 sleep(0.01) #wait
         print("threads dead")   
+        print(self.depth_one_moves)
+        print(self.child_best_score)
         for score_index in range(len(self.depth_one_moves)): #maximize
             if (self.child_best_score[score_index] > best_score):
                 best_score = self.child_best_score[score_index]
@@ -96,8 +102,7 @@ class AI:
                 best_score = score
                 best_move = potential
         
-        self.depth_one_moves.insert(move_num, prev)
-        self.child_best_score.insert(move_num, score)
+        self.child_best_score[move_num] = best_score
 
         self.child_locks[lock_index].release() #release lock after threading is done
         return best_move
