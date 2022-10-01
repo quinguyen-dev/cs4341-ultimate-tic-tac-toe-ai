@@ -95,15 +95,15 @@ class Board:
         # Set the current player for this turn
         self.set_current_player()
 
-        self.board_array[move[0] * 9 + move[1]] = self.current_player # todo used to be + 1
-        self.move_count += 1 # todo does this need to be here at this point?
-
+        self.board_array[move[0] * 9 + move[1]] = self.current_player 
         self.evaluate_local(move)
 
         if calc_heuristic:
             self.accumulated_heuristic += self.heuristic(move) * (-1 if self.current_player != self.represented_player else 1)
-  
 
+        
+        self.move_count += 1 # todo does this need to be here at this point?
+  
 
     def evaluate_local(self, move: tuple[int, int]):
         ''' Checks to see if the local board that the move was played on has been won or drawn. Changes status of small board in global_board
@@ -130,26 +130,24 @@ class Board:
         col_pos = local_board_move % 3
 
         # Get the row stats of a local board and add the current player to its respective counter
-        self.local_board_stats[local_board_pos][0][row_pos] += self.current_player # todo change this to active player
+        self.local_board_stats[local_board_pos][0][row_pos] += self.current_player
         scores.append(self.local_board_stats[local_board_pos][0][row_pos]) #add row to scores array
 
         # Get the column stats of a local board and add the current player to its respective counter
-        self.local_board_stats[local_board_pos][1][col_pos] += self.current_player # todo change this to active player and make sure this is a reference
+        self.local_board_stats[local_board_pos][1][col_pos] += self.current_player
         scores.append(self.local_board_stats[local_board_pos][1][col_pos]) #add col to scores
         
         if local_board_move % 4 == 0: # Check the anti-diagonal
-            self.local_board_stats[local_board_pos][2][1] += self.current_player # todo change this to active player
+            self.local_board_stats[local_board_pos][2][1] += self.current_player
             scores.append(self.local_board_stats[local_board_pos][2][1]) 
         elif local_board_move % 2 == 0: # Check the diagonal 
-            self.local_board_stats[local_board_pos][2][0] += self.current_player # todo change this to active player
+            self.local_board_stats[local_board_pos][2][0] += self.current_player
             scores.append(self.local_board_stats[local_board_pos][2][0])
 
         # Check if a win condition has been met
 
-        #print(scores)
         for score in scores: 
             if score == (self.current_player * 3): # todo ask about this
-                print(scores)
                 self.global_board[local_board_pos] = self.current_player # Updates the closed status of the small board on the global list # todo change this to active player
                 self.evaluate_global(local_board_pos) # Check if winning a small board has won a larger board
                 return self.current_player #board is won 
@@ -214,7 +212,6 @@ class Board:
 
         for score in scores: #check each win condition
             if score == self.current_player * 3: #game is won
-                
                 return self.current_player
         if self.global_board_stats[3] == 9: #game is draw
             return State.DRAW
@@ -422,16 +419,16 @@ class Board:
         '''
         
         legal_moves = []
-        if self.global_board[move[1]] != 0: 
-            for board_index in range(9):
-                if self.global_board[move[1]] != 0:
+        if self.global_board[move[1]] != State.UNCLAIMED:  # if the global board is claimed 
+            for board_index in range(9): # for every available board
+                if self.global_board[board_index] == State.UNCLAIMED: # if the global board is not claimed
                     for i in range(9):
-                        if self.board_array[9*board_index+i] == State.UNCLAIMED:
+                        if self.board_array[9*board_index+i] == State.UNCLAIMED and self.global_board[i] == State.UNCLAIMED:
                             legal_moves.append((board_index, i))
         else:
             for i in range(0,9):
                 position = move[1] * 9 + i
-                if self.board_array[position] == 0:
+                if self.board_array[position] == State.UNCLAIMED:
                     legal_moves.append((move[1], i))
 
         return legal_moves
@@ -483,12 +480,3 @@ class Board:
             if i is not 0 and i % 9 == 0: 
                 print("\n")
             print(f'{self.board_array[i]} ', end = '')
-
-
-
-
-        
-
-
-        
-
