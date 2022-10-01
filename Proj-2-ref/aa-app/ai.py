@@ -3,6 +3,7 @@ from concurrent.futures import thread
 from copy import deepcopy
 from multiprocessing import Lock
 from os import dup
+from utility import State
 import sys
 import threading
 from time import sleep
@@ -19,11 +20,10 @@ class AI:
 
     print_lock = threading.Lock() #lock used to prevent race conditions when printing
 
-    def thread_determine_move(self, board: Board, prev: tuple[int, int], max_threads: int = 60):
-        '''
-             Creates a set of threads to determine the best move by running the determine_move on the depth 1 child of the \'prev\' move
+    def thread_determine_move(self, board: Board, prev: tuple[int, int], max_threads: int = 69):
+        ''' Creates a set of threads to determine the best move by running the determine_move on the depth 1 child of the \'prev\' move
             
-            Args
+            Args:
                 board: current game board
                 prev: last moved played (this move should have been played by opponent)
                 max_threads: maximum number of threads the system is allowed to run
@@ -49,11 +49,6 @@ class AI:
         for i in range(max_threads):
             self.child_locks.append(threading.Lock()) 
 
-        # print(f'Child locks: {self.child_locks}', flush=True)
-
-        # todo what does this do 
-        # For every legal move in the local board
-        print(f'Legal moves: {depth_one_length}')
         for move_num in range(depth_one_length):
             locked_out = True
 
@@ -63,68 +58,39 @@ class AI:
                         locked_out = False
                         break
 
-            #create a new thread that runs determine_move
-            # print(f"move_num: {move_num}")
             thread_list.append(threading.Thread(target=self.determine_move, name=lock_num, args=(board, self.depth_one_moves[move_num], lock_num, move_num)))
-            thread_list[-1].start() #start the thread
-            
-            # self.print_lock.acquire(True) #get permission to print
-            # print(thread_list[-1].name+ "started")
-            # self.print_lock.release() #let someone else print
-        
+            thread_list[-1].start()
         
         best_score = -AI.INFINITE
-
-        # self.print_lock.acquire(True)
-        # print(thread_list[-1].name + "waiting")
-        # self.print_lock.release()
 
         while threading.active_count() != 1:
             sleep(0.01)
 
-        # for thread in thread_list:
-        #     while thread.is_alive(): #while a thread is running
-        #         sleep(0.01) #wait
-
-       #  print("threads dead")   
-        # print(f'Depth one moves: {self.depth_one_moves}')
-        # print(f'Depth one best scores: {self.depth_one_best_score}')
-
-        print(f'The best scores: {self.depth_one_best_score}')
         for score_index in range(depth_one_length): #maximize
             if self.depth_one_best_score[score_index] > best_score:
                 best_score = self.depth_one_best_score[score_index]
                 best_move = self.depth_one_moves[score_index]
 
-        print(f'The best move was: {best_move}')
         return best_move
 
 
     def determine_move(self, board: Board, prev: tuple[int, int], lock_index: int, move_num: int):  
-        self.child_locks[lock_index].acquire(True) #lock to limit num of active threads
+        self.child_locks[lock_index].acquire(True)
         
         best_move =  ()
-        best_score = AI.INFINITE  # todo made this negative
+        best_score = AI.INFINITE  
         
-        # self.print_lock.acquire(blocking=True) # gain access to std.out
-        # print("determine move "+ str(lock_index), flush=True)
-        # self.print_lock.release()
-
         for potential in board.legal_moves(prev):
             clone = board.clone()
             clone.new_move(potential, True)
-            
-            # self.print_lock.acquire(blocking=True)
-            # print(str(potential), flush=True)
-            # self.print_lock.release()
 
-            score = AI.alphabeta(clone, 4, -AI.INFINITE, AI.INFINITE, True, potential) 
-            if score < best_score: # todo inverted sign
+            score = AI.alphabeta(clone, 8, -AI.INFINITE, AI.INFINITE, True, potential) 
+            if score < best_score: 
                 best_score = score
                 best_move = potential
         
         self.depth_one_best_score[move_num] = best_score
-        self.child_locks[lock_index].release() #release lock after threading is done
+        self.child_locks[lock_index].release()
         return best_move
     
     
@@ -150,37 +116,45 @@ class AI:
         legal_moves = board.legal_moves(prev)
 
         if depth == 0 or len(legal_moves) == 0:
-            return board.accumulated_heuristic                                     # Get the heuristic value of the board state
-
-        if len(legal_moves) > 9 and depth > 2:
-            depth = 2
+            return board.accumulated_heuristic                                     
 
         if maximizing:
             value = -AI.INFINITE
             
-            for move in legal_moves:                               # For every possible move in the given board
-                clone = board.clone()                                     # Create a deep copy of the board
-                clone.new_move(move, True)                                          # Make a legal move in the deep copy
+            for move in legal_moves:                             
+                clone = board.clone()                                    
+                clone.new_move(move, True)      
 
-                value = max(value, AI.alphabeta(clone, depth-1, a, b, False, move))  # Get the maximum value between the returning alpha value and the current best
-                a = max(a, value)                                              # Get the maximum value between the passed in alpha and the current best
+                # if move gives opponent a closed board
+                if  len(clone.legal_moves(move)) > 10:
+                    print(f'{depth}: Opponent move is a wildcard')
+                    print(clone.global_board)
+                    depth = 1
 
-                if a >= b:                                                     # If alpha is greater than or equal to beta
-                    break                                                      # Prune
+                value = max(value, AI.alphabeta(clone, depth-1, a, b, False, move))  
+                a = max(a, value)                                           
+
+                if a >= b:                                                   
+                    break                                                  
             
-            return value                                                       # Return the final best value (this comes from the heuristic conditional)
+            return value                                                     
 
         else:
             value = AI.INFINITE
             
-            for move in legal_moves:                               # For every possible move in the given board
-                clone = board.clone()                                    # Create a deep copy of the board
-                clone.new_move(move, True)        # Make a legal move in the deep copy
+            for move in legal_moves:                              
+                clone = board.clone()                                  
+                clone.new_move(move, True)     
 
-                value = min(value, AI.alphabeta(clone, depth-1, a, b, True, move))    # Get the minimum value between the returning beta value and the current best
-                b = min(b, value)                                              # Get the minimum value between the passed in beta and the current best
+                if len(clone.legal_moves(move)) > 10:
+                    print(f'{depth}: Opponent move is a wildcard')
+                    print(clone.global_board)
+                    depth = 1
 
-                if a >= b :                                                     # If alpha is greater than or equal to beta
-                    break                                                      # Prune
+                value = min(value, AI.alphabeta(clone, depth-1, a, b, True, move))   
+                b = min(b, value)                                 
 
-            return value                                                       # Return the final best value (this comes from the heuristic conditional)
+                if a >= b :                                                   
+                    break                                                     
+
+            return value                                                     
