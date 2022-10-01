@@ -4,6 +4,7 @@ from time import sleep
 from threading import Thread
 from ai import AI
 from utility import State
+import time
 
 def main():
     player = Player("artificial_andys")
@@ -16,6 +17,9 @@ def main():
         player.read_first_four(board)  
               
         if player.check_for_turn():
+
+            start = time.perf_counter()
+
             # print('is turn')  
             player.read_move(board)
 
@@ -25,6 +29,8 @@ def main():
 
             board.new_move(player_move)
             player.make_move(player_move)
+
+            print(f'Time: {time.perf_counter() - start:0.04f}')
             print(board.global_board)
             
             # print("\n=============================")
