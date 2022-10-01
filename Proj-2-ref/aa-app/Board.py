@@ -447,7 +447,7 @@ class Board:
         if win_local == self.current_player: #won the board
             win_local = 1
             global_board_block = self.block_opponent(self.global_board, move[0], 0)
-            global_board_adj = self.move_adjacency(self.global_board, move[0], 0)
+            global_board_adj = self.move_adjacency(self.global_board, move[0], self.global_board_stats)
             global_board_opp = self.board_opportunity(self.global_board, move[0])
         elif win_local == -1: #drew the board
             win_local = 0.5
@@ -464,9 +464,9 @@ class Board:
             global_win = 0
 
         blocked_opp = self.block_opponent(self.board_array, move[1], move[0] * 9)
-        adj_bonus = self.move_adjacency(self.board_array, move[1], move[0])
+        adj_bonus = self.move_adjacency(self.board_array, move[1], self.local_board_stats[move[0]])
 
-        heuristic_ = (blocked_opp*20) + (adj_bonus*5) + (win_local*100) + (global_board_adj * 200) + (global_board_block * 150) + (global_board_opp * 5) + (global_win * 100000)
+        heuristic_ = (blocked_opp*20) + (adj_bonus*10) + (win_local*100) + (global_board_adj * 200) + (global_board_block * 150) + (global_board_opp * 15) + (global_win * 100000)
         return heuristic_ if heuristic_ > 0 else -20
 
 
