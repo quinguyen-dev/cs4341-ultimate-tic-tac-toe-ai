@@ -286,7 +286,7 @@ class Board:
         return blocked
 
 
-    def move_adjacency(self, board: list, relative_move:int, index_offset:int): #was the last move adjacent to one of your previous moves
+    def move_adjacency(self, board: list, relative_move:int, stats_array: tuple[tuple[int, int, int], tuple[int, int, int], tuple[int, int], int]): #was the last move adjacent to one of your previous moves
         '''Determines the number of adjacent moves that are of the same type and can lead to a win
 
             Args:
@@ -301,64 +301,69 @@ class Board:
             Returns:
                 The number of adjacent moves
         '''
-        index = relative_move + index_offset
         adjacent = 0
-        match relative_move:
-            case 0: #top left
-                if(board[index+1] == self.current_player or board[index+2] == self.current_player): #check row block
-                    adjacent +=1
-                if(board[index+3] == self.current_player or board[index+6] == self.current_player): #check col block
+
+        for score_list in range(3): # get the arrays of cols, rows, diags
+            for score in stats_array[score_list]: #for each row, col or diag
+                if(score == 2*self.current_player): #if it is equal to exactly 2* current player, then there must be only two Xs or 2 Os in that set
                     adjacent += 1
-                if(board[index+4] == self.current_player or board[index+8] == self.current_player): #check diagonal
-                    adjacent += 1
-            case 1: #top middle
-                if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
-                    adjacent +=1
-                if(board[index+3] == self.current_player or board[index+6] == self.current_player): #col
-                    adjacent += 1
-            case 2: #top right
-                if(board[index-2] == self.current_player or board[index-1] == self.current_player): #row
-                    adjacent +=1
-                if(board[index+3] == self.current_player or board[index+6] == self.current_player): #col
-                    adjacent += 1
-            case 3: #middle left
-                if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
-                    adjacent +=1
-                if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
-                    adjacent += 1
-            case 4: #center
-                if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
-                    adjacent +=1
-                if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
-                    adjacent += 1
-                if(board[index-4] == self.current_player or board[index+4] == self.current_player): #diag
-                    adjacent +=1
-                if(board[index-2] == self.current_player or board[index+2] == self.current_player): #antidiag
-                    adjacent += 1 
-            case 5: #middle right
-                if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
-                    adjacent +=1
-                if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
-                    adjacent += 1
-            case 6: #bottom left
-                if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
-                    adjacent +=1
-                if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
-                    adjacent += 1
-                if(board[index-2] == self.current_player or board[index-4] == self.current_player): #antidiag
-                    adjacent +=1
-            case 7: #bottom middle
-                if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
-                    adjacent +=1
-                if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
-                    adjacent += 1
-            case 8: #bottom right
-                if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
-                    adjacent +=1
-                if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
-                    adjacent += 1
-                if(board[index-4] == self.current_player or board[index-8] == self.current_player): #diag
-                    adjacent += 1
+
+        # match relative_move:
+        #     case 0: #top left
+        #         if(board[index+1] == self.current_player or board[index+2] == self.current_player): #check row block
+        #             adjacent +=1
+        #         if(board[index+3] == self.current_player or board[index+6] == self.current_player): #check col block
+        #             adjacent += 1
+        #         if(board[index+4] == self.current_player or board[index+8] == self.current_player): #check diagonal
+        #             adjacent += 1
+        #     case 1: #top middle
+        #         if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
+        #             adjacent +=1
+        #         if(board[index+3] == self.current_player or board[index+6] == self.current_player): #col
+        #             adjacent += 1
+        #     case 2: #top right
+        #         if(board[index-2] == self.current_player or board[index-1] == self.current_player): #row
+        #             adjacent +=1
+        #         if(board[index+3] == self.current_player or board[index+6] == self.current_player): #col
+        #             adjacent += 1
+        #     case 3: #middle left
+        #         if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
+        #             adjacent +=1
+        #         if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
+        #             adjacent += 1
+        #     case 4: #center
+        #         if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
+        #             adjacent +=1
+        #         if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
+        #             adjacent += 1
+        #         if(board[index-4] == self.current_player or board[index+4] == self.current_player): #diag
+        #             adjacent +=1
+        #         if(board[index-2] == self.current_player or board[index+2] == self.current_player): #antidiag
+        #             adjacent += 1 
+        #     case 5: #middle right
+        #         if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
+        #             adjacent +=1
+        #         if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
+        #             adjacent += 1
+        #     case 6: #bottom left
+        #         if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
+        #             adjacent +=1
+        #         if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
+        #             adjacent += 1
+        #         if(board[index-2] == self.current_player or board[index-4] == self.current_player): #antidiag
+        #             adjacent +=1
+        #     case 7: #bottom middle
+        #         if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
+        #             adjacent +=1
+        #         if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
+        #             adjacent += 1
+        #     case 8: #bottom right
+        #         if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
+        #             adjacent +=1
+        #         if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
+        #             adjacent += 1
+        #         if(board[index-4] == self.current_player or board[index-8] == self.current_player): #diag
+        #             adjacent += 1
         return adjacent
 
 
@@ -459,7 +464,7 @@ class Board:
             global_win = 0
 
         blocked_opp = self.block_opponent(self.board_array, move[1], move[0] * 9)
-        adj_bonus = self.move_adjacency(self.board_array, move[1], move[0] * 9)
+        adj_bonus = self.move_adjacency(self.board_array, move[1], move[0])
 
         heuristic_ = (blocked_opp*20) + (adj_bonus*5) + (win_local*100) + (global_board_adj * 200) + (global_board_block * 150) + (global_board_opp * 5) + (global_win * 100000)
         return heuristic_ if heuristic_ > 0 else -20
