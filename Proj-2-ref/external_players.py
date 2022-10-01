@@ -72,7 +72,7 @@ def external_player(moves, main_board, local_board_num, my_symbol, opponent_symb
                 global_board = int(tokens[1])
                 local_board = int(tokens[2])
             except:
-                return BAD_MOVE_I_LOST, f'Invalid move!'
+                return BAD_MOVE_I_LOST, f'Invalid move! {line}'
 
 
             # Verify that move is from expected player
@@ -82,7 +82,7 @@ def external_player(moves, main_board, local_board_num, my_symbol, opponent_symb
             # Check if move is valid
             g = local_to_global((local_board, global_board))
             if g not in moves:
-                return BAD_MOVE_I_LOST, f'Invalid move!'
+                return BAD_MOVE_I_LOST, f'Invalid move! {g} {moves}'
 
     else:
         # Player didn't move in time!
