@@ -46,8 +46,8 @@ class Board:
         '''
             creates clone of board object
 
-            returns
-                new board object that has deepcopy of attributes from self
+            Returns:
+                New board object that has deepcopy of attributes from self
         
         '''
 
@@ -66,15 +66,6 @@ class Board:
         new_board.accumulated_heuristic = copy.deepcopy(self.accumulated_heuristic)
 
         return new_board
-        
-
-    def get_current_player(self):
-        ''' Calculates the current player
-
-            Returns:
-                State.PLAYER_1 (1) if it is Player 1's turn. State.PLAYER_2 (2) if it is Player 2's turn.
-        '''
-        return self.move_count % 2
 
 
     def set_current_player(self):
@@ -90,8 +81,8 @@ class Board:
             calc_heuristic: True is heuristic needs to be updated, should be false when move is brought in from ref or when final move is selected
         
         Returns:
-
         '''
+
         # Set the current player for this turn
         self.set_current_player()
 
@@ -101,8 +92,7 @@ class Board:
         if calc_heuristic:
             self.accumulated_heuristic += self.heuristic(move) * (-1 if self.current_player != self.represented_player else 1)
 
-        
-        self.move_count += 1 # todo does this need to be here at this point?
+        self.move_count += 1
   
 
     def evaluate_local(self, move: tuple[int, int]):
@@ -137,14 +127,17 @@ class Board:
         self.local_board_stats[local_board_pos][1][col_pos] += self.current_player
         scores.append(self.local_board_stats[local_board_pos][1][col_pos]) #add col to scores
         
-        if local_board_move % 4 == 0: # Check the anti-diagonal
+        if local_board_move == 4:
+            self.local_board_stats[local_board_pos][2][1] += self.current_player
+            self.local_board_stats[local_board_pos][2][0] += self.current_player
+            scores.append(self.local_board_stats[local_board_pos][2][1]) 
+            scores.append(self.local_board_stats[local_board_pos][2][0])
+        elif local_board_move % 4 == 0: # Check the anti-diagonal
             self.local_board_stats[local_board_pos][2][1] += self.current_player
             scores.append(self.local_board_stats[local_board_pos][2][1]) 
         elif local_board_move % 2 == 0: # Check the diagonal 
             self.local_board_stats[local_board_pos][2][0] += self.current_player
             scores.append(self.local_board_stats[local_board_pos][2][0])
-
-        # Check if a win condition has been met
 
         for score in scores: 
             if score == (self.current_player * 3): # todo ask about this
@@ -159,6 +152,7 @@ class Board:
             return State.DRAW
 
         return State.UNCLAIMED
+
 
     def evaluate_global(self, local_board_pos: int, heuristic = False):
         ''' Evaluates win conditions for the big board
@@ -176,38 +170,33 @@ class Board:
         col_pos = local_board_pos % 3
 
         if heuristic:
-            row_score = self.global_board_stats[0][row_pos]  
-            scores.append(row_score) 
-
-            col_score = self.global_board_stats[1][col_pos] 
-            scores.append(col_score) 
+            scores.append(self.global_board_stats[0][row_pos]) 
+            scores.append(self.global_board_stats[1][col_pos] ) 
         
             if local_board_pos % 4 == 0: # Check anti-diagonal
-                anti_diag_score = self.global_board_stats[2][1]
-                scores.append(anti_diag_score)
+                scores.append(self.global_board_stats[2][1])
             elif local_board_pos % 2 == 0: # Check diagonal
-                diag_score = self.global_board_stats[2][0] 
-                scores.append(diag_score)
-
+                scores.append(self.global_board_stats[2][0] )
         
         else:
             self.global_board_stats[3] += 1
-            row_score = self.global_board_stats[0][row_pos] 
-            row_score += player  
-            scores.append(row_score) 
+            self.global_board_stats[0][row_pos] += player  
+            scores.append(self.global_board_stats[0][row_pos]) 
 
-            col_score = self.global_board_stats[1][col_pos] 
-            col_score += player 
-            scores.append(col_score) 
+            self.global_board_stats[1][col_pos] += player 
+            scores.append(self.global_board_stats[1][col_pos]) 
         
-            if local_board_pos % 4 == 0: # Check anti-diagonal
-                anti_diag_score = self.global_board_stats[2][1]
-                anti_diag_score += player
-                scores.append(anti_diag_score)
-            elif local_board_pos % 2 == 0: # Check diagonal
-                diag_score = self.global_board_stats[2][0] 
-                diag_score += player 
-                scores.append(diag_score)
+            if local_board_pos == 4:
+                self.global_board_stats[2][1] += player
+                self.global_board_stats[2][0] += player 
+                scores.append(self.global_board_stats[2][1])
+                scores.append(self.global_board_stats[2][0])
+            elif local_board_pos % 4 == 0:
+                self.global_board_stats[2][1] += player
+                scores.append(self.global_board_stats[2][1])
+            elif local_board_pos % 2 == 0:
+                self.global_board_stats[2][0] += player 
+                scores.append(self.global_board_stats[2][0])
 
 
         for score in scores: #check each win condition
@@ -215,7 +204,8 @@ class Board:
                 return self.current_player
         if self.global_board_stats[3] == 9: #game is draw
             return State.DRAW
-        return State.UNCLAIMED #game is not over
+
+        return State.UNCLAIMED
 
 
     def block_opponent(self, board: list, relative_move:int, index_offset:int): #did the last move block the opponent?
@@ -422,9 +412,9 @@ class Board:
         if self.global_board[move[1]] != State.UNCLAIMED:  # if the global board is claimed 
             for board_index in range(9): # for every available board
                 if self.global_board[board_index] == State.UNCLAIMED: # if the global board is not claimed
-                    for i in range(9):
-                        if self.board_array[9*board_index+i] == State.UNCLAIMED and self.global_board[i] == State.UNCLAIMED:
-                            legal_moves.append((board_index, i))
+                    for local_board_index in range(9):
+                        if self.board_array[9*board_index+local_board_index] == State.UNCLAIMED:
+                            legal_moves.append((board_index, local_board_index))
         else:
             for i in range(0,9):
                 position = move[1] * 9 + i
@@ -468,12 +458,12 @@ class Board:
         else:
             global_win = 0
 
-        blocked_opp = self.block_opponent(self.board_array, move[1], move[0]*9)
+        blocked_opp = self.block_opponent(self.board_array, move[1], move[0] * 9)
         adj_bonus = self.move_adjacency(self.board_array, move[1], move[0] * 9)
 
+        heuristic_ = (blocked_opp*20) + (adj_bonus*5) + (win_local*100) + (global_board_adj * 200) + (global_board_block * 150) + (global_board_opp * 5) + (global_win * 100000)
+        return heuristic_ if heuristic_ > 0 else -20
 
-        #weights of each heuristic minus penalty for making a move that does nothing
-        return (blocked_opp*20) + (adj_bonus*5) + (win_local*100) + (global_board_adj*200) + (global_board_block*150) + (global_board_opp*5) + (global_win*400) - 20
 
     def printBoard(self): 
         for i in range(len(self.board_array)):

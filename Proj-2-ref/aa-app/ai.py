@@ -19,7 +19,7 @@ class AI:
 
     print_lock = threading.Lock() #lock used to prevent race conditions when printing
 
-    def thread_determine_move(self, board: Board, prev: tuple[int, int], max_threads: int = 9):
+    def thread_determine_move(self, board: Board, prev: tuple[int, int], max_threads: int = 60):
         '''
              Creates a set of threads to determine the best move by running the determine_move on the depth 1 child of the \'prev\' move
             
@@ -53,6 +53,7 @@ class AI:
 
         # todo what does this do 
         # For every legal move in the local board
+        print(f'Legal moves: {depth_one_length}')
         for move_num in range(depth_one_length):
             locked_out = True
 
@@ -146,13 +147,18 @@ class AI:
             int: The heuristic value of the optimal move.
         """
 
-        if depth == 0: 
+        legal_moves = board.legal_moves(prev)
+
+        if depth == 0 or len(legal_moves) == 0:
             return board.accumulated_heuristic                                     # Get the heuristic value of the board state
+
+        if len(legal_moves) > 9 and depth > 2:
+            depth = 2
 
         if maximizing:
             value = -AI.INFINITE
             
-            for move in board.legal_moves(prev):                               # For every possible move in the given board
+            for move in legal_moves:                               # For every possible move in the given board
                 clone = board.clone()                                     # Create a deep copy of the board
                 clone.new_move(move, True)                                          # Make a legal move in the deep copy
 
@@ -167,14 +173,14 @@ class AI:
         else:
             value = AI.INFINITE
             
-            for move in board.legal_moves(prev):                               # For every possible move in the given board
+            for move in legal_moves:                               # For every possible move in the given board
                 clone = board.clone()                                    # Create a deep copy of the board
                 clone.new_move(move, True)        # Make a legal move in the deep copy
 
                 value = min(value, AI.alphabeta(clone, depth-1, a, b, True, move))    # Get the minimum value between the returning beta value and the current best
                 b = min(b, value)                                              # Get the minimum value between the passed in beta and the current best
 
-                if a >= b:                                                     # If alpha is greater than or equal to beta
+                if a >= b :                                                     # If alpha is greater than or equal to beta
                     break                                                      # Prune
 
             return value                                                       # Return the final best value (this comes from the heuristic conditional)
