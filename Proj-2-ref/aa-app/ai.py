@@ -17,14 +17,14 @@ class AI:
 
 
 
-    def create_processes_determine_move( board: Board, prev: tuple[int, int], max_threads: int = 3):
+    def create_processes_determine_move( board: Board, prev: tuple[int, int], max_processes: int = 3):
         '''
              Creates a set of processes to determine the best move by running the determine_move on the depth 1 child of the \'prev\' move
             
             Args
                 board: current game board
                 prev: last moved played (this move should have been played by opponent)
-                max_threads: maximum number of threads the system is allowed to run
+                max_processes: maximum number of threads the system is allowed to run
 
         '''
         # Clear all arrays and create an emily list of mutex locks
@@ -42,7 +42,7 @@ class AI:
         process_list = []
 
         # Create a lock for each of the allowed threads
-        for i in range(max_threads):
+        for i in range(max_processes):
             child_locks.append(multiprocessing.Lock()) 
         print(child_locks)
 
@@ -54,7 +54,7 @@ class AI:
             locked_out = True
 
             while locked_out: 
-                for lock_num in range(max_threads): 
+                for lock_num in range(max_processes): 
                     if child_locks[lock_num].acquire(block = False):
                         i += 1 
                         locked_out = False
