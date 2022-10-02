@@ -150,6 +150,7 @@ class AI:
         legal_moves = board.legal_moves(prev)
 
         if depth == 0 or len(legal_moves) == 0:
+            print(board.accumulated_heuristic)
             return board.accumulated_heuristic                                     # Get the heuristic value of the board state
 
         if len(legal_moves) > 9 and depth > 2:
