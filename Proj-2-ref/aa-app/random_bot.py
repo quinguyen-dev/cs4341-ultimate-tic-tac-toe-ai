@@ -5,6 +5,7 @@ from time import sleep
 from threading import Thread
 from ai import AI
 from utility import State
+import random
 
 def main():
     player = Player("bot")
