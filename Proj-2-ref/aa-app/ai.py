@@ -24,77 +24,80 @@ class AI:
             Args
                 board: current game board
                 prev: last moved played (this move should have been played by opponent)
-                max_processes: maximum number of threads the system is allowed to run
+                max_processes: maximum number of processes the system is allowed to run
 
         '''
         # Clear all arrays and create an emily list of mutex locks
         depth_one_moves = [] #array of legal moves
-        child_locks = [] #locks for each of the spawned threads
+        child_locks = [] #locks for each of the spawned processes
         process_results_queue = multiprocessing.Queue() #multi process queue that holds results of each process. This is evaulated at end of all threads
 
 
         # Get an array of depth first moves (open moves on the given board)
         depth_one_moves = board.legal_moves(prev)
 
-        depth_one_length = len(depth_one_moves)
+        #number of possible next moves
+        depth_one_length = len(depth_one_moves) 
 
         # Create an array to hold any Thread objects that are created
         process_list = []
 
-        # Create a lock for each of the allowed threads
+        # Create a lock for each of the allowed processes
         for i in range(max_processes):
             child_locks.append(multiprocessing.Lock()) 
         print(child_locks)
 
-        # todo what does this do 
-        # For every legal move in the local board
+        
         i = 0
         print(f'Legal moves: {depth_one_length}')
+
+        # For every legal move in the local board
         for move_num in range(depth_one_length):
             locked_out = True
 
+            #while there are not any open locks for the move to use
             while locked_out: 
-                for lock_num in range(max_processes): 
-                    if child_locks[lock_num].acquire(block = False):
-                        i += 1 
-                        locked_out = False
-                        print(child_locks[lock_num])
-                        break
+                for lock_num in range(max_processes):   
+                    if child_locks[lock_num].acquire(block = False): #check each lock. do not wait for them to be open before iterating 
+                        i += 1 #this is for debugging more than anything
+                        locked_out = False #since a lock is available, set to exit loop
+                        print(child_locks[lock_num]) #debug
+                        break#leave loops
 
-            #create a new thread that runs determine_move
+            #create a new process that runs determine_move
             process_list.append(multiprocessing.Process(target=AI.determine_move, name=str(i), args=(board, depth_one_moves[move_num], child_locks[lock_num], process_results_queue)))
-            process_list[-1].start() #start the thread
-            child_locks[lock_num].release()
+            process_list[-1].start() #start the process
+            child_locks[lock_num].release() #open the lock for the process to begin
         
         
         best_score = -AI.INFINITE
 
-        while len(multiprocessing.active_children()) > 0:
+        while len(multiprocessing.active_children()) > 0: #while all of the processes are running, wait
             sleep(0.01)
 
 
         #maximize
-        collect_best_scores = []
-        while not process_results_queue.empty():
-            result = process_results_queue.get()
-            collect_best_scores.append(result)
-            if result[0] > best_score:
+        collect_best_scores = [] #debugging
+        while not process_results_queue.empty(): #while there are results waiting
+            result = process_results_queue.get() #get a result
+            collect_best_scores.append(result) #debugging
+            if result[0] > best_score: #maximize the results
                 best_score = result[0]
                 best_move = result[1]
 
-        print(f'The best move was set of best moves: {collect_best_scores}')
+        print(f'The moves and scores:\n {collect_best_scores}\n')
         return best_move
 
 
     def determine_move(board: Board, prev: tuple[int, int], lock: multiprocessing.Lock, queue: multiprocessing.Queue):  
-        print('lock waiting', flush = True)
+        print('lock waiting', flush = True) #debugging
         lock.acquire(block=True) #lock to limit num of active threads
-        print('lock acquired', flush = True)
+        print('lock acquired', flush = True) #debugging
         print(lock, flush=True)
-        try:
+        try: #the try block is here to ensure that even if an error occurs, the process will still die and release the lock properly
             
             best_move =  ()
-            best_score = AI.INFINITE  # todo made this negative
+            best_score = AI.INFINITE
             
 
             for potential in board.legal_moves(prev):
@@ -103,15 +106,15 @@ class AI:
                 
 
                 score = AI.alphabeta(clone, 4, -AI.INFINITE, AI.INFINITE, True, potential) 
-                if score < best_score: # todo inverted sign
+                if score < best_score:
                     best_score = score
                     best_move = potential
             print('waiting for queue', flush=True)
-            queue.put([best_score, prev])
-
+            queue.put([best_score, prev]) #put the score and move into a tuple, send the tuple into the process-shared queue so the main process can read it later
+            queue.close() #let the queue know that its done in this process and it can be garbage collected for this process
         finally:
-            lock.release() #release lock after threading is done
-            print('lock released', flush = True)
+            lock.release() #release lock after process is done
+            print('lock released', flush = True) #debugging
         return best_move
     
     
