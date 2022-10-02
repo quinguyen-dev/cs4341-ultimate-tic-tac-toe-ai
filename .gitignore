@@ -2,6 +2,8 @@
 *.pyc
 ./idea
 
+.DS_Store
+
 #ignore temporary gameplay files
 Proj-2-ref/end_game
 Proj-2-ref/first_four_moves
