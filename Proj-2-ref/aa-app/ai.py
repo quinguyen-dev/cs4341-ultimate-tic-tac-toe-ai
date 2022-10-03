@@ -13,26 +13,35 @@ class AI:
 
     INFINITE = sys.maxsize
 
+    def arbitrary_timer_callback():
+        print("timer done")
+
+
     def determine_move( board: Board, prev: tuple[int, int]):  
+        timer = threading.Timer(9.8, AI.arbitrary_timer_callback)
+        timer.start()
         
         best_move =  ()
         best_score = -AI.INFINITE  # todo made this negative
         
 
         for potential in board.legal_moves(prev):
-            clone = board.clone()
-            clone.new_move(potential, True)
+            if(timer.is_alive()):
+                clone = board.clone()
+                clone.new_move(potential, True)
 
-            score = AI.alphabeta(clone, 4, -AI.INFINITE, AI.INFINITE, False, potential) 
-            if score > best_score: # todo inverted sign
-                best_score = score
-                best_move = potential
-        
+                score = AI.alphabeta(clone, 6, -AI.INFINITE, AI.INFINITE, False, potential, timer) 
+                if score > best_score: # todo inverted sign
+                    best_score = score
+                    best_move = potential
+            else:
+                break
+        timer.cancel()
         return best_move
     
     
     @staticmethod
-    def alphabeta(board: Board, depth: int, a: int, b: int, maximizing: bool, prev: tuple[int, int]):
+    def alphabeta(board: Board, depth: int, a: int, b: int, maximizing: bool, prev: tuple[int, int], timer:threading.Timer):
         """ Minimaxing algorithm with alpha beta pruning.
 
         Args:
@@ -52,7 +61,7 @@ class AI:
 
         legal_moves = board.legal_moves(prev)
 
-        if depth == 0 or len(legal_moves) == 0:
+        if depth == 0 or len(legal_moves) == 0 or not timer.is_alive():
             print(board.accumulated_heuristic)
             return board.accumulated_heuristic                                     # Get the heuristic value of the board state
 
@@ -71,7 +80,7 @@ class AI:
                     print("Opp Wild Card")
                     depth = 2
 
-                value = max(value, AI.alphabeta(clone, depth-1, a, b, False, move))  # Get the maximum value between the returning alpha value and the current best
+                value = max(value, AI.alphabeta(clone, depth-1, a, b, False, move, timer))  # Get the maximum value between the returning alpha value and the current best
                 a = max(a, value)                                              # Get the maximum value between the passed in alpha and the current best
 
                 if a >= b:                                                     # If alpha is greater than or equal to beta
@@ -91,7 +100,7 @@ class AI:
                     print("Opp Wild Card")
                     depth = 2
 
-                value = min(value, AI.alphabeta(clone, depth-1, a, b, True, move))    # Get the minimum value between the returning beta value and the current best
+                value = min(value, AI.alphabeta(clone, depth-1, a, b, True, move, timer))    # Get the minimum value between the returning beta value and the current best
                 b = min(b, value)                                              # Get the minimum value between the passed in beta and the current best
 
                 if a >= b :                                                     # If alpha is greater than or equal to beta
