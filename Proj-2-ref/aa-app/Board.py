@@ -306,63 +306,6 @@ class Board:
             for score in stats_array[score_list]: #for each row, col or diag
                 if score == 2 * self.current_player: #if it is equal to exactly 2* current player, then there must be only two Xs or 2 Os in that set
                     adjacent += 1
-
-        # match relative_move:
-        #     case 0: #top left
-        #         if(board[index+1] == self.current_player or board[index+2] == self.current_player): #check row block
-        #             adjacent +=1
-        #         if(board[index+3] == self.current_player or board[index+6] == self.current_player): #check col block
-        #             adjacent += 1
-        #         if(board[index+4] == self.current_player or board[index+8] == self.current_player): #check diagonal
-        #             adjacent += 1
-        #     case 1: #top middle
-        #         if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
-        #             adjacent +=1
-        #         if(board[index+3] == self.current_player or board[index+6] == self.current_player): #col
-        #             adjacent += 1
-        #     case 2: #top right
-        #         if(board[index-2] == self.current_player or board[index-1] == self.current_player): #row
-        #             adjacent +=1
-        #         if(board[index+3] == self.current_player or board[index+6] == self.current_player): #col
-        #             adjacent += 1
-        #     case 3: #middle left
-        #         if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
-        #             adjacent +=1
-        #         if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
-        #             adjacent += 1
-        #     case 4: #center
-        #         if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
-        #             adjacent +=1
-        #         if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
-        #             adjacent += 1
-        #         if(board[index-4] == self.current_player or board[index+4] == self.current_player): #diag
-        #             adjacent +=1
-        #         if(board[index-2] == self.current_player or board[index+2] == self.current_player): #antidiag
-        #             adjacent += 1 
-        #     case 5: #middle right
-        #         if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
-        #             adjacent +=1
-        #         if(board[index-3] == self.current_player or board[index+3] == self.current_player): #col
-        #             adjacent += 1
-        #     case 6: #bottom left
-        #         if(board[index+1] == self.current_player or board[index+2] == self.current_player): #row
-        #             adjacent +=1
-        #         if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
-        #             adjacent += 1
-        #         if(board[index-2] == self.current_player or board[index-4] == self.current_player): #antidiag
-        #             adjacent +=1
-        #     case 7: #bottom middle
-        #         if(board[index-1] == self.current_player or board[index+1] == self.current_player): #row
-        #             adjacent +=1
-        #         if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
-        #             adjacent += 1
-        #     case 8: #bottom right
-        #         if(board[index-1] == self.current_player or board[index-2] == self.current_player): #row
-        #             adjacent +=1
-        #         if(board[index-3] == self.current_player or board[index-6] == self.current_player): #col
-        #             adjacent += 1
-        #         if(board[index-4] == self.current_player or board[index-8] == self.current_player): #diag
-        #             adjacent += 1
         return adjacent
 
 
@@ -445,19 +388,19 @@ class Board:
         
         if win_local == self.current_player: #won the board
             win_local = 1
-            global_board_block = self.block_opponent(self.global_board, move[0], 0)
-            global_board_adj = self.move_adjacency(self.global_board, move[0], self.global_board_stats)
-            global_board_opp = self.board_opportunity(self.global_board, move[0])
-        elif win_local == -1: #drew the board
+            global_board_block = self.block_opponent(self.global_board, move[0], 0) # did closing the small board block a global win
+            global_board_adj = self.move_adjacency(self.global_board, move[0], self.global_board_stats) # was the closed board near another closed board of the same player
+            global_board_opp = self.board_opportunity(self.global_board, move[0]) # how many ways can you win from the current position
+        elif win_local == -1: #no winner the board
             win_local = 0.5
             global_board_block = self.block_opponent(self.global_board, move[0], 0)
         else:
             win_local = 0
         
-        global_win = self.evaluate_global(move[0], True)
-        if global_win == self.represented_player:
+        global_win = self.evaluate_global(move[0], True) #check if the move caused a win
+        if global_win == self.represented_player: #if the board was won by the current player
             global_win = 1
-        elif global_win == State.DRAW:
+        elif global_win == State.DRAW: #a draw should be prioritized over a lose
             global_win = 0.25
         else:
             global_win = 0
@@ -465,7 +408,7 @@ class Board:
         blocked_opp = self.block_opponent(self.board_array, move[1], move[0] * 9)
         adj_bonus = self.move_adjacency(self.board_array, move[1], self.local_board_stats[move[0]])
 
-        heuristic_ = (blocked_opp*20) + (adj_bonus*10) + (win_local*100) + (global_board_adj * 200) + (global_board_block * 150) + (global_board_opp * 15) + (global_win * 100000)
+        heuristic_ = (blocked_opp*20) + (adj_bonus*10) + (win_local*100) + (global_board_adj * 200) + (global_board_block * 150) + (global_board_opp * 40) + (global_win * 100000)
         return heuristic_ if heuristic_ > 0 else -20
 
 
