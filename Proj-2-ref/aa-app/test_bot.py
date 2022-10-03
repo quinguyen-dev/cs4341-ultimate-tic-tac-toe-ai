@@ -21,7 +21,7 @@ def main():
 
             opponent_move = player.last_move
             # print(player.last_move)
-            player_move = ai.thread_determine_move(board, opponent_move) 
+            player_move = AI.determine_move(board, opponent_move) 
 
             board.new_move(player_move)
             player.make_move(player_move)
