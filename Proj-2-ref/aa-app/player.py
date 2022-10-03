@@ -70,9 +70,9 @@ class Player:
             move_file.write(f'{self.team_name} {move[0]} {move[1]}\n')
             move_file.close()
 
+            # todo what is this
             while os.path.exists(f'../{self.team_name}.go') and not self.check_end():
-                print("waiting for file to delete")
-                
+                pass
 
             self.my_turn = False
             self.turn_start_time = None

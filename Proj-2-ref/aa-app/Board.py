@@ -198,7 +198,6 @@ class Board:
                 self.global_board_stats[2][0] += player 
                 scores.append(self.global_board_stats[2][0])
 
-
         for score in scores: #check each win condition
             if score == self.current_player * 3: #game is won
                 return self.current_player
@@ -305,7 +304,7 @@ class Board:
 
         for score_list in range(3): # get the arrays of cols, rows, diags
             for score in stats_array[score_list]: #for each row, col or diag
-                if(score == 2*self.current_player): #if it is equal to exactly 2* current player, then there must be only two Xs or 2 Os in that set
+                if score == 2 * self.current_player: #if it is equal to exactly 2* current player, then there must be only two Xs or 2 Os in that set
                     adjacent += 1
 
         # match relative_move:
