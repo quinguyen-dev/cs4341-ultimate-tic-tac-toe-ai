@@ -5,6 +5,7 @@ from time import sleep
 from threading import Thread
 from ai import AI
 from utility import State
+import random
 
 def main():
     player = Player("bot")
@@ -22,6 +23,7 @@ def main():
             print(player.last_move)
             
             player_move = random.choice(board.legal_moves(opponent_move))
+            sleep(0.5)
             
             board.new_move(player_move)
             player.make_move(player_move)

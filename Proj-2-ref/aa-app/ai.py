@@ -1,11 +1,5 @@
-from ast import While
-from concurrent.futures import thread
-from copy import deepcopy
-from multiprocessing import Lock
-from os import dup
 import sys
 import threading
-from time import sleep
 
 from Board import Board
 
@@ -13,30 +7,54 @@ class AI:
 
     INFINITE = sys.maxsize
 
+    def arbitrary_timer_callback():
+        print("timer done")
+
     def determine_move( board: Board, prev: tuple[int, int]):  
+        """ Get the best move that the player can make.
+
+        Args:
+            board (Board): The current board state.
+            prev (tuple[int, int]): The previous move made.
+
+        Returns:
+            tuple[int, int]: The best move to make at a depth of one.
+        """
+        timer = threading.Timer(9.8, AI.arbitrary_timer_callback)
+        timer.start()
         
         best_move =  ()
-        best_score = -AI.INFINITE  # todo made this negative
-        
+        best_score = -AI.INFINITE
+        depth = 1
 
-        for potential in board.legal_moves(prev):
-            clone = board.clone()
-            clone.new_move(potential, True)
+        while timer.is_alive():
+            for potential in board.legal_moves(prev):
+                if timer.is_alive():
+                    clone = board.clone()
+                    clone.new_move(potential, True)
 
-            score = AI.alphabeta(clone, 4, -AI.INFINITE, AI.INFINITE, False, potential) 
-            if score > best_score: # todo inverted sign
-                best_score = score
-                best_move = potential
-        
+                    score = AI.alphabeta(clone, depth, -AI.INFINITE, AI.INFINITE, False, potential, timer)
+                    if score > best_score:
+                        best_score = score
+                        best_move = potential
+
+                    print(f'The best move is: {best_move} with score {best_score}')
+                else:
+                    break
+
+            depth += 1
+            print(f"Going Deeper: Depth = {depth}")
+
+        timer.cancel()
         return best_move
     
     
     @staticmethod
-    def alphabeta(board: Board, depth: int, a: int, b: int, maximizing: bool, prev: tuple[int, int]):
+    def alphabeta(board: Board, depth: int, a: int, b: int, maximizing: bool, prev: tuple[int, int], timer:threading.Timer):
         """ Minimaxing algorithm with alpha beta pruning.
 
         Args:
-            board (Board): The UTTT Board object.
+            board (Board): The Ultimate Tic-Tac-Toe Board object.
             depth (int): The current depth levels we have left for iterative deepening.
             a (int): α value.
             b (int): β value.
@@ -52,49 +70,42 @@ class AI:
 
         legal_moves = board.legal_moves(prev)
 
-        if depth == 0 or len(legal_moves) == 0:
-            print(board.accumulated_heuristic)
-            return board.accumulated_heuristic                                     # Get the heuristic value of the board state
-
-
+        if depth == 0 or len(legal_moves) == 0 or not timer.is_alive():
+            return board.accumulated_heuristic                                    
 
         if maximizing:
             value = -AI.INFINITE
-            
-
-            for move in legal_moves:                               # For every possible move in the given board
+    
+            for move in legal_moves:                              
                 
-                clone = board.clone()                                     # Create a deep copy of the board
-                clone.new_move(move, True)                                          # Make a legal move in the deep copy
+                clone = board.clone()                                  
+                clone.new_move(move, True)                                        
 
-                if(len(clone.legal_moves(move)) > 9 and depth > 2):
-                    print("Opp Wild Card")
+                if (len(clone.legal_moves(move)) > 9 and depth > 2):
                     depth = 2
 
-                value = max(value, AI.alphabeta(clone, depth-1, a, b, False, move))  # Get the maximum value between the returning alpha value and the current best
-                a = max(a, value)                                              # Get the maximum value between the passed in alpha and the current best
+                value = max(value, AI.alphabeta(clone, depth-1, a, b, False, move, timer)) 
+                a = max(a, value)                                             
 
-                if a >= b:                                                     # If alpha is greater than or equal to beta
-                    break                                                      # Prune
+                if a >= b:                                                    
+                    break                                                      
             
-            return value                                                       # Return the final best value (this comes from the heuristic conditional)
+            return value                                                       
 
         else:
             value = AI.INFINITE
             
-            
-            for move in legal_moves:                               # For every possible move in the given board
-                clone = board.clone()                                    # Create a deep copy of the board
-                clone.new_move(move, True)        # Make a legal move in the deep copy
-                
-                if(len(clone.legal_moves(move)) > 9 and depth > 2):
-                    print("Opp Wild Card")
+            for move in legal_moves:                           
+                clone = board.clone()                                
+                clone.new_move(move, True)       
+
+                if (len(clone.legal_moves(move)) > 9 and depth > 2):
                     depth = 2
 
-                value = min(value, AI.alphabeta(clone, depth-1, a, b, True, move))    # Get the minimum value between the returning beta value and the current best
-                b = min(b, value)                                              # Get the minimum value between the passed in beta and the current best
+                value = min(value, AI.alphabeta(clone, depth-1, a, b, True, move, timer))   
+                b = min(b, value)                                             
 
-                if a >= b :                                                     # If alpha is greater than or equal to beta
-                    break                                                      # Prune
+                if a >= b :                                                   
+                    break                                                     
 
-            return value                                                       # Return the final best value (this comes from the heuristic conditional)
+            return value                                                      
