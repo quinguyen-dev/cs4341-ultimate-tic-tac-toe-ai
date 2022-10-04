@@ -63,7 +63,9 @@ class Player:
         """
         if self.my_turn:
             move_file = open("../move_file", "w")
+            move_file.seek(0)
             move_file.write(f'{self.team_name} {move[0]} {move[1]}')
+            move_file.truncate()
             move_file.close()
 
             move_file = open("../move_set", "a")
