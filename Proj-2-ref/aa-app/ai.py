@@ -21,21 +21,26 @@ class AI:
         timer.start()
         
         best_move =  ()
-        best_score = -AI.INFINITE  
+        best_score = -AI.INFINITE
+        depth = 1
 
-        for potential in board.legal_moves(prev):
-            if timer.is_alive():
-                clone = board.clone()
-                clone.new_move(potential, True)
+        while timer.is_alive():
+            for potential in board.legal_moves(prev):
+                if timer.is_alive():
+                    clone = board.clone()
+                    clone.new_move(potential, True)
 
-                score = AI.alphabeta(clone, 6, -AI.INFINITE, AI.INFINITE, False, potential, timer) 
-                if score > best_score:
-                    best_score = score
-                    best_move = potential
+                    score = AI.alphabeta(clone, depth, -AI.INFINITE, AI.INFINITE, False, potential, timer)
+                    if score > best_score:
+                        best_score = score
+                        best_move = potential
 
-                print(f'The best move is: {best_move} with score {best_score}')
-            else:
-                break
+                    print(f'The best move is: {best_move} with score {best_score}')
+                else:
+                    break
+
+            depth += 1
+            print(f"Going Deeper: Depth = {depth}")
 
         timer.cancel()
         return best_move
