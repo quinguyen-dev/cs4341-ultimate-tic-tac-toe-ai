@@ -1,11 +1,5 @@
-from ast import While
-from concurrent.futures import thread
-from copy import deepcopy
-from multiprocessing import Lock
-from os import dup
 import sys
 import threading
-from time import sleep
 
 from Board import Board
 
@@ -17,6 +11,15 @@ class AI:
         print("timer done")
 
     def determine_move( board: Board, prev: tuple[int, int]):  
+        """ Get the best move that the player can make.
+
+        Args:
+            board (Board): The current board state.
+            prev (tuple[int, int]): The previous move made.
+
+        Returns:
+            tuple[int, int]: The best move to make at a depth of one.
+        """
         timer = threading.Timer(9.8, AI.arbitrary_timer_callback)
         timer.start()
         

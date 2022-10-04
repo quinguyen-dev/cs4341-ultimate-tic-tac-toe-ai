@@ -68,11 +68,10 @@ class Player:
             move_file.truncate()
             move_file.close()
 
-            move_file = open("../move_set", "a")
-            move_file.write(f'{self.team_name} {move[0]} {move[1]}\n')
-            move_file.close()
+            # move_file = open("../move_set", "a")
+            # move_file.write(f'{self.team_name} {move[0]} {move[1]}\n')
+            # move_file.close()
 
-            # todo what is this
             while os.path.exists(f'../{self.team_name}.go') and not self.check_end():
                 pass
 
@@ -80,8 +79,14 @@ class Player:
             self.turn_start_time = None
         else:
             raise Exception("Not your turn")
+            
 
     def read_first_four(self, board: Board):
+        """ Read the first four move file from the referee.
+
+        Args:
+            board (Board): The Board object for the game.
+        """
         move = ""
 
         flag = os.path.exists(f'../first_four_moves')
@@ -108,7 +113,7 @@ class Player:
             Exception: If it is not the player's turn.
 
         Returns:
-            tuple: _description_
+            tuple: The move that was made.
         """
         if self.my_turn:
             move = ""
@@ -128,6 +133,14 @@ class Player:
 
     @staticmethod
     def parse_move(move: str):
+        """ Utility to read a move from move_file.
+
+        Args:
+            move (str): The move string from move_file.
+
+        Returns:
+            tuple[(]int, int]: The move that was made.
+        """
         parsed = move.replace("\n", "").split(" ")[1:]
 
         return tuple(map(int, parsed))
