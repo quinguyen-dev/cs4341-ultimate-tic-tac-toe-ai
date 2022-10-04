@@ -23,8 +23,7 @@ class AI:
         best_move =  ()
         best_score = -AI.INFINITE
         depth = 1
-        print(board.legal_moves(prev))
-        sleep(3)
+
         while timer.is_alive():
             for potential in board.legal_moves(prev):
                 if timer.is_alive():
