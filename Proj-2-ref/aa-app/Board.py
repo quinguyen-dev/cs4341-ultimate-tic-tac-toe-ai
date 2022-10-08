@@ -1,5 +1,6 @@
 import copy
 from math import floor
+from xmlrpc.client import Boolean
 from utility import State
 
 class Board:
@@ -35,7 +36,29 @@ class Board:
             Args:
                 player: which player is the agent representing.
         '''
-        self.represented_player = represented_player 
+        self.board_array = [State.UNCLAIMED] * 81
+
+        # Number of moves played
+        self.move_count = 0 
+
+        #the player who made the last move
+        self.current_player = State.UNCLAIMED
+
+        # Player the agent represents (either player 1 or player 2)
+        self.represented_player = State.UNCLAIMED
+        self.represented_opponent = State.UNCLAIMED
+
+        # Possible values: State.UNCLAIMED (0), State.PLAYER_1 (1), State.PLAYER_2 (2), 
+        self.global_board = [State.UNCLAIMED for i in range(9)] 
+
+        # [ [Row Win States], [Column Win States], [ Diagonal WS, Anti-Diagonal WS], Total Moves ]
+        self.global_board_stats = [[0,0,0], [0,0,0], [0,0], 0]
+        self.local_board_stats  = [[[0,0,0], [0,0,0], [0,0], 0] for i in range(9)]
+
+        # The heuristic value of the global board
+        self.accumulated_heuristic = 0
+
+        self.represented_player = represented_player if represented_player == State.UNCLAIMED else State.PLAYER_1
         self.represented_opponent = (State.PLAYER_1 if (represented_player != State.PLAYER_1) else State.PLAYER_2)
 
     def config_player(self, represented_player: State):
@@ -336,7 +359,7 @@ class Board:
         return opportunity 
 
     
-    def legal_moves(self, move: tuple[int, int]):
+    def legal_moves(self, move: tuple[int, int], training: Boolean):
         """ Determines the set if legal moves based on the current board.
 
         Args:
@@ -346,7 +369,7 @@ class Board:
             list(tuple[int, int]):  The list of legal moves.
         """
         legal_moves = []
-        if self.global_board[move[1]] != State.UNCLAIMED:  # if the global board is claimed 
+        if (training and move == None) or self.global_board[move[1]] != State.UNCLAIMED:  # if the global board is claimed 
             for board_index in range(9): # for every available board
                 if self.global_board[board_index] == State.UNCLAIMED: # if the global board is not claimed
                     for local_board_index in range(9):
@@ -400,6 +423,19 @@ class Board:
         heuristic_ = (blocked_opp*20) + (adj_bonus*10) + (win_local*100) + (global_board_adj * 200) + (global_board_block * 150) + (global_board_opp * 40) + (global_win * 100000)
         return heuristic_ if heuristic_ > 0 else -20
 
+    def has_game_ended(self):
+        for winCond in range(3):
+            for score in self.global_board_stats[winCond]:
+                #print(f"Score: {score}\t Boards: {self.global_board}\t Scores: {self.global_board_stats}\t Moves: {self.move_count}")
+                if(score == State.PLAYER_1 *3):
+                    #print("PLAYER 1 HAS WON")
+                    return State.PLAYER_1
+                if(score == State.PLAYER_2 * 3):
+                    #print("PLAYER 2 HAS WON")
+                    return State.PLAYER_2
+        if(self.global_board_stats[3] == 9):
+            return State.UNCLAIMED
+        return None
 
     def printBoard(self): 
         """ Utility to print a viewable Board state. """
@@ -407,3 +443,19 @@ class Board:
             if i is not 0 and i % 9 == 0: 
                 print("\n")
             print(f'{self.board_array[i]} ', end = '')
+    
+    def print_board_pretty(self):
+        print(f"{self.board_array[0]} {self.board_array[1]} {self.board_array[2]}  |  {self.board_array[9]} {self.board_array[10]} {self.board_array[11]}  |  {self.board_array[18]} {self.board_array[19]} {self.board_array[20]}")
+        print(f"{self.board_array[3]} {self.board_array[4]} {self.board_array[5]}  |  {self.board_array[12]} {self.board_array[13]} {self.board_array[14]}  |  {self.board_array[21]} {self.board_array[22]} {self.board_array[23]}")
+        print(f"{self.board_array[6]} {self.board_array[7]} {self.board_array[8]}  |  {self.board_array[15]} {self.board_array[16]} {self.board_array[17]}  |  {self.board_array[24]} {self.board_array[25]} {self.board_array[26]}")
+        print("-----------------------------")
+        print(f"{self.board_array[27]} {self.board_array[28]} {self.board_array[29]}  |  {self.board_array[36]} {self.board_array[37]} {self.board_array[38]}  |  {self.board_array[45]} {self.board_array[46]} {self.board_array[47]}")
+        print(f"{self.board_array[30]} {self.board_array[31]} {self.board_array[32]}  |  {self.board_array[39]} {self.board_array[40]} {self.board_array[41]}  |  {self.board_array[48]} {self.board_array[49]} {self.board_array[50]}")
+        print(f"{self.board_array[33]} {self.board_array[34]} {self.board_array[35]}  |  {self.board_array[42]} {self.board_array[43]} {self.board_array[44]}  |  {self.board_array[51]} {self.board_array[52]} {self.board_array[53]}")
+        print("-----------------------------")
+        print(f"{self.board_array[54]} {self.board_array[55]} {self.board_array[56]}  |  {self.board_array[63]} {self.board_array[64]} {self.board_array[65]}  |  {self.board_array[72]} {self.board_array[73]} {self.board_array[74]}")
+        print(f"{self.board_array[57]} {self.board_array[58]} {self.board_array[59]}  |  {self.board_array[66]} {self.board_array[67]} {self.board_array[68]}  |  {self.board_array[75]} {self.board_array[76]} {self.board_array[77]}")
+        print(f"{self.board_array[60]} {self.board_array[61]} {self.board_array[62]}  |  {self.board_array[69]} {self.board_array[70]} {self.board_array[71]}  |  {self.board_array[78]} {self.board_array[79]} {self.board_array[80]}")
+        print("-----------------------------")
+
+        print("\n")
