@@ -252,13 +252,13 @@ if __name__ == "__main__":
 
     st = Environment_State(p1, p2)
     print("training...")
-    st.play(1000000)
+    st.play(10)
     p1.savePolicy()
     p2.savePolicy()
 
     # play with human
-    #p1 = Player("computer", exp_rate=0)
-    #p1.loadPolicy("policy_p1")
+    p1 = Player("computer", exp_rate=0)
+    p1.loadPolicy("policy_p1")
 
     p2 = HumanPlayer("human")
 
