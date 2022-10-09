@@ -1,270 +1,147 @@
 from genericpath import exists
+import random
+from statistics import mode
+import time
+from xmlrpc.client import Boolean
+from ai import AI
 import numpy as np
 import pickle
 from Board import Board
 from utility import State
+from tensorflow import keras
+from keras import Sequential
+from keras.layers import Dense, Dropout
+from keras.optimizers import SGD
+from scipy.ndimage.interpolation import shift
 
-BOARD_ROWS = 3
-BOARD_COLS = 3
-LOCAL_BOARDS = 9
+def generate_model():
+    model = Sequential()
+    model.add(Dense(162, input_dim = 81, kernel_initializer='normal', activation='relu'))
+    model.add(Dropout(0.1))
+    model.add(Dense(81, kernel_initializer='normal', activation='relu'))
+    model.add(Dropout(0.1))
+    model.add(Dense(1, kernel_initializer='normal'))
 
-#source: https://towardsdatascience.com/reinforcement-learning-implement-tictactoe-189582bea542
-#source: https://github.com/MJeremy2017/reinforcement-learning-implementation/blob/master/TicTacToe/ticTacToe.py 
+    learning_rate = 0.001
+    momentum = 0.8
+    sgd = SGD(lr=learning_rate, momentum= momentum, nesterov=False)
+    model.compile(loss='mean_squared_error', optimizer=sgd)
+    model.summary()
+    return model
 
-class Environment_State:
-    def __init__(self, p1, p2):
-        self.board = Board() #2D array of board initialized with 0s in every location
-        self.p1 = p1 #player 1
-        self.p2 = p2 #player 2
-        self.isEnd = False #has the game ended
-        self.boardHash = None #hash of the board state
-        self.last_move = None #store last move played
-        # init p1 plays first
-        self.playerSymbol = State.PLAYER_1
+def select_move(model:Sequential, board_state:Board):
+    move_scores = {}
 
-    # get unique hash of current board state
-    def getHash(self):
-        self.boardHash = str(self.board.board_array)
-        return self.boardHash
+    legal_moves = board_state.legal_moves(board_state.last_move)
+    for move in legal_moves:
+        clone = board_state.clone()
+        clone.new_move(move)
+        score = model.predict(np.array(clone.board_array).reshape(1,81))
+        move_scores[move] = score 
+    selected_move = max(move_scores, key=move_scores.get)
+    new_board = board_state.clone()
+    new_board.new_move(selected_move)
+    return selected_move, new_board, move_scores[selected_move]
 
-    def winner(self):
-        # row
-        game_winner = self.board.has_game_ended()
-        if( game_winner != None):
-            self.isEnd = True
-            return game_winner
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = np.random.permutation(len(a))
+    return a[p], b[p]
+
+def train_model(model: Sequential, print_progress: Boolean = False, random_agent: Boolean = False):
+    if print_progress:
+        print("\n\n----------------------------------------------------------")
+        print("new game")
+    
+    rl_player_id = State.PLAYER_1 if random.randint(1,2) == 1 else State.PLAYER_2
+    opponent_id = State.PLAYER_1 if rl_player_id == State.PLAYER_2 else State.PLAYER_2
+
+    board = Board(represented_player=opponent_id)
+    score_list = []
+    new_board_states_list = []
+    corrected_scores_list = []
+    winner = None
+
+    
+    
+    while(1):
+        if board.current_player == rl_player_id:
+            selected_move, cloned_board,score = select_move(model, board)
+            score_list.append(score[0][0])
+            new_board_states_list.append(cloned_board.board_array)
+            board.new_move(selected_move)
+            if print_progress:
+                print(f"RL chose {selected_move}")
+        elif(not random_agent):
+            player_move = AI.determine_move(board, board.last_move, time=6) 
+
+            board.new_move(player_move)
+            if print_progress:
+                print(f"Minimax chose: {player_move}")
         else:
-            return None
-
-    def availablePositions(self): #returns array of legal positions
-        return self.board.legal_moves(self.last_move, True)
-
-    def updateState(self, position): #switches perspective
-        self.board.new_move(position)
-
-        self.last_move = position
-        # switch to another player
-        self.playerSymbol = State.PLAYER_2 if self.playerSymbol == State.PLAYER_1 else State.PLAYER_1
-
-    # only when game ends
-    def giveReward(self):
-        result = self.winner()
-        # backpropagate reward
-        if result == 1:
-            self.p1.feedReward(1)
-            self.p2.feedReward(0)
-        elif result == -1:
-            self.p1.feedReward(0)
-            self.p2.feedReward(1)
-        else:
-            self.p1.feedReward(0.1)
-            self.p2.feedReward(0.5)
-
-    # board reset after game is won
-    def reset(self):
-        #print("RESET BOARD")
-        del self.board
-        self.board = Board()
-        self.boardHash = None
-        self.isEnd = False
-        self.playerSymbol = State.PLAYER_1
-        self.last_move = None
-
-    def play(self, rounds=100):
-        for i in range(rounds):
-            if i % 50 == 0:
-                print("Rounds {}".format(i))
-            while not self.isEnd:
-                # Player 1
-                positions = self.availablePositions()
-                p1_action = self.p1.chooseAction(positions, self.board, self.playerSymbol)
-                # take action and update board state
-                self.updateState(p1_action)
-                board_hash = self.getHash()
-                self.p1.addState(board_hash)
-                # check board status if it is end
-
-                win = self.winner()
-                if win is not None:
-                    #print(f"WINNER: {win}")
-                    #self.showBoard()
-                    # ended with p1 either win or draw
-                    self.giveReward()
-                    self.p1.reset()
-                    self.p2.reset()
-                    self.reset()
-                    break
-
-                else:
-                    # Player 2
-                    positions = self.availablePositions()
-                    p2_action = self.p2.chooseAction(positions, self.board, self.playerSymbol)
-                    self.updateState(p2_action)
-                    board_hash = self.getHash()
-                    self.p2.addState(board_hash)
-
-                    win = self.winner()
-                    if win is not None:
-                        # self.showBoard()
-                        # ended with p2 either win or draw
-                        self.giveReward()
-                        self.p1.reset()
-                        self.p2.reset()
-                        self.reset()
-                        break
-
-    # play with human
-    def play2(self):
-        while not self.isEnd:
-            # Player 1
-            positions = self.availablePositions()
-            p1_action = self.p1.chooseAction(positions, self.board, self.playerSymbol)
-            # take action and update board state
-            self.updateState(p1_action)
-            self.showBoard()
-            print(f"move_count: {self.board.move_count}")
-            # check board status if it is end
-            win = self.winner()
-            if win is not None:
-                if win == 1:
-                    print(self.p1.name, "wins!")
-                else:
-                    print("tie!")
-                self.reset()
-                break
-
-            else:
-                # Player 2
-                positions = self.availablePositions()
-                print(self.last_move)
-                p2_action = self.p2.chooseAction(positions)
-
-                self.updateState(p2_action)
-                self.showBoard()
-                win = self.winner()
-                if win is not None:
-                    if win == -1:
-                        print(self.p2.name, "wins!")
-                    else:
-                        print("tie!")
-                    self.reset()
-                    break
-
-    def showBoard(self):
-        # p1: x  p2: o
-        self.board.print_board_pretty()
+            player_move = random.choice(board.legal_moves())
+            board.new_move(player_move)
+            if print_progress:
+                print(f"Random Agent Chose: {player_move}")
         
+        if(board.has_game_ended() != winner):
+            winner = board.has_game_ended()
+            board.print_board_pretty()
+            break 
+    
+    #assign values to viewed states based on win/draw/loss
+    new_board_states_list = tuple(new_board_states_list)
+    new_board_states_list = np.vstack(new_board_states_list)
 
+    if winner == rl_player_id:
+        corrected_scores_list = shift(score_list, -1, cval=1.0)
+        result = "Won"
+    elif winner == opponent_id:
+        corrected_scores_list = shift(score_list, -1, cval=-1.0)
+        result = "Lost"
+    else:
+        corrected_scores_list = shift(score_list, -1, cval=0)
+        result = "Draw"
+    if print_progress:
+        print(f"Program has {result}")
+        print("Correcting the scores and updating model weights: ")
+        print("----------------------------------------------------")
+    x = new_board_states_list
+    y = corrected_scores_list
 
-class Player:
-    def __init__(self, name, exp_rate=0.3, decay_gamma: float = 1, learning_rate: float = 0.2):
-        self.name = name
-        self.states = []  # record all positions taken
-        self.lr = 0.2
-        self.exp_rate = exp_rate
-        self.decay_gamma = decay_gamma
-        self.states_value = {}  # state -> value
-
-    def getHash(self, board: Board):
-        boardHash = str(board.board_array)
-        return boardHash
-
-    def chooseAction(self, positions:tuple[tuple[int, int]], current_board:Board, symbol):
-        if np.random.uniform(0, 1) <= self.exp_rate: #if a value is randomly selected to explore options instead of follow policy
-            # take random action
-            idx = np.random.choice(len(positions))
-            action = positions[idx]
-        else:
-            value_max = -999
-            for p in positions: #for each possible position
-                next_board = current_board.clone() #copy current board
-                next_board.new_move(p)#add new move
-                next_boardHash = self.getHash(next_board) #get hashed value of move
-                value = 0 if self.states_value.get(next_boardHash) is None else self.states_value.get(next_boardHash) #check if board config has been seen before, return cumulative reward for state if seen before, else return 0
-                #print("value", value)
-                if value >= value_max: #if best so far
-                    value_max = value
-                    action = p #set as next recommended action
-        # print("{} takes action {}".format(self.name, action))
-        return action #return best action or random action
-
-    # append a hash state
-    def addState(self, state):
-        #adds a hashed board array to state
-        self.states.append(state)
-
-    # at the end of game, backpropagate and update states value
-    def feedReward(self, reward):
-        for st in reversed(self.states): #states is the record of moves taken
-            if self.states_value.get(st) is None: #if a state has never been seen prior to this game
-                self.states_value[st] = 0 #add to dictionary and set value to 0
-            #add to the value of the state, the learning rate * (the discount * the value of the next state in the sequence - current value for reward)
-            self.states_value[st] += self.lr * (self.decay_gamma * reward - self.states_value[st])
-            reward = self.states_value[st]
-
-    def reset(self):
-        self.states = []
-
-    def savePolicy(self):
-        fw = open('policy_' + str(self.name), 'wb')
-        pickle.dump(self.states_value, fw)
-        fw.close()
-
-    def loadPolicy(self, file):
-        if exists(file):
-            fr = open(file, 'rb')
-            self.states_value = pickle.load(fr)
-            fr.close()
-
-
-class HumanPlayer:
-    def __init__(self, name):
-        self.name = name
-
-    def chooseAction(self, positions):
-        while True:
-            row = int(input("Input your action board:"))
-            col = int(input("Input your action rel pos:"))
-
-            action = (row, col)
-            if action in positions:
-                return action
-
-    # append a hash state
-    def addState(self, state):
-        pass
-
-    # at the end of game, backpropagate and update states value
-    def feedReward(self, reward):
-        pass
-
-    def reset(self):
-        pass
-
-
-if __name__ == "__main__":
-    # training
-    p1 = Player("p1", 0.2, 0.6, 0.4)
-    p2 = Player("p2")
-
-    p1.loadPolicy("policy_p1")
-    p2.loadPolicy("policy_p2")
-
-    st = Environment_State(p1, p2)
-    print("training...")
-    st.play(10)
-    p1.savePolicy()
-    p2.savePolicy()
-
-    # play with human
-    p1 = Player("computer", exp_rate=0)
-    p1.loadPolicy("policy_p1")
-
-    p2 = HumanPlayer("human")
-
-    st = Environment_State(p1, p2)
-    st.play2()
+    x,y = unison_shuffled_copies(x, y)
+    x=x.reshape(-1, 81)
+    model.fit(x,y,epochs=1,batch_size=1,verbose=0)
+    return model,y,result
 
 
 
-    '''because theres so many moves its possible that the latter steps are receiving almost no rewards'''
+
+if __name__ == '__main__':
+    if exists("rl_uttt_model.h5"):
+        model = keras.models.load_model("rl_uttt_model.h5")
+    else:
+        model = generate_model()
+    board = Board()
+    print(select_move(model, board))
+    wins = 0
+    mode_selections = [True, False, True]
+    wins_over_time = []
+    easy_wins = 0
+    hard_wins = 0
+    for i in range(1000):
+        random_agent = random.choice(mode_selections)
+        updated_model,y,result = train_model(model, True, random_agent=random_agent)
+        if result == "Won":
+            wins += 1
+            if(random_agent):
+                easy_wins += 1
+            else:
+                hard_wins += 1
+        if i % 50 == 0:
+            wins_over_time.append([i, wins, easy_wins, hard_wins])
+
+    print(f"\n\n {wins_over_time}")
+    print(f"WINS: {wins/1000}\n\n")
+
+    model.save("rl_uttt_model.h5")

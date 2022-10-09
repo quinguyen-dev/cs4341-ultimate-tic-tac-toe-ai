@@ -10,7 +10,7 @@ class AI:
     def arbitrary_timer_callback():
         print("timer done")
 
-    def determine_move( board: Board, prev: tuple[int, int]):  
+    def determine_move( board: Board, prev: tuple[int, int], time: float = 10):  
         """ Get the best move that the player can make.
 
         Args:
@@ -20,7 +20,7 @@ class AI:
         Returns:
             tuple[int, int]: The best move to make at a depth of one.
         """
-        timer = threading.Timer(9.8, AI.arbitrary_timer_callback)
+        timer = threading.Timer(time-0.2, AI.arbitrary_timer_callback)
         timer.start()
         
         best_move =  ()
@@ -37,15 +37,14 @@ class AI:
                     if score > best_score:
                         best_score = score
                         best_move = potential
-
-                    print(f'The best move is: {best_move} with score {best_score}')
                 else:
                     break
 
             depth += 1
-            print(f"Going Deeper: Depth = {depth}")
 
         timer.cancel()
+        print(f'The best move is: {best_move} with score {best_score}')
+        print(f"Going Deeper: Depth = {depth}")
         return best_move
     
     

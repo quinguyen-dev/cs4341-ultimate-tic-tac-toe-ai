@@ -27,6 +27,8 @@ class Board:
     # The heuristic value of the global board
     accumulated_heuristic = 0
 
+    last_move = None
+
     def __init__(self):
         pass
 
@@ -60,6 +62,8 @@ class Board:
 
         self.represented_player = represented_player if represented_player == State.UNCLAIMED else State.PLAYER_1
         self.represented_opponent = (State.PLAYER_1 if (represented_player != State.PLAYER_1) else State.PLAYER_2)
+
+        self.last_move = None
 
     def config_player(self, represented_player: State):
         """ Set the configuration of a given Board.
@@ -110,6 +114,15 @@ class Board:
         # Set the current player for this turn
         self.set_current_player()
 
+        legal = False
+        for moves in self.legal_moves(self.last_move):
+            if moves == move:
+                legal = True
+                break
+        
+        while(not legal):
+            print("made illegal move")
+
         self.board_array[move[0] * 9 + move[1]] = self.current_player 
         self.evaluate_local(move)
 
@@ -117,6 +130,8 @@ class Board:
             self.accumulated_heuristic += self.heuristic(move) * (-1 if self.current_player != self.represented_player else 1)
 
         self.move_count += 1
+
+        self.last_move = move
   
 
     def evaluate_local(self, move: tuple[int, int]):
@@ -359,7 +374,7 @@ class Board:
         return opportunity 
 
     
-    def legal_moves(self, move: tuple[int, int], training: Boolean):
+    def legal_moves(self, move: tuple[int, int] = None):
         """ Determines the set if legal moves based on the current board.
 
         Args:
@@ -368,8 +383,10 @@ class Board:
         Returns:
             list(tuple[int, int]):  The list of legal moves.
         """
+        if(move == None):
+            move = self.last_move
         legal_moves = []
-        if (training and move == None) or self.global_board[move[1]] != State.UNCLAIMED:  # if the global board is claimed 
+        if (self.last_move == None) or self.global_board[move[1]] != State.UNCLAIMED:  # if the local board for next move is closed
             for board_index in range(9): # for every available board
                 if self.global_board[board_index] == State.UNCLAIMED: # if the global board is not claimed
                     for local_board_index in range(9):
