@@ -15,16 +15,23 @@ from keras.optimizers import SGD
 from scipy.ndimage.interpolation import shift
 
 def generate_model():
-    model = Sequential()
-    model.add(Dense(162, input_dim = 81, kernel_initializer='normal', activation='relu'))
-    model.add(Dropout(0.1))
+    model = Sequential() #a sequential NN is a standard stack of nodes. there is a singular input and singular output
+    model.add(Dense(162, input_dim = 81, kernel_initializer='normal', activation='relu')) #adds a dense layer to the stack
+    #a dense layer is a standard perceptron that returns the output of the activation function when given parameter of input times weights + bias
+    #the dense layer above has an output with a dimensionality of 162, takes in 81 inputs, uses a random set of weights initially, and uses relu as the activation function
+   
+    model.add(Dropout(0.1)) #dropout layers randomly set inputs to 0 to help prevent over fitting of data
+    #sets to 0 at a rate of 0.1 abd inputs not set to 0 are scaled by 1/(1-rate) (why though???)
+
     model.add(Dense(81, kernel_initializer='normal', activation='relu'))
     model.add(Dropout(0.1))
     model.add(Dense(1, kernel_initializer='normal'))
 
     learning_rate = 0.001
     momentum = 0.8
-    sgd = SGD(lr=learning_rate, momentum= momentum, nesterov=False)
+
+    #stochastic gradient descent
+    sgd = SGD(lr=learning_rate, momentum= momentum, nesterov=False) 
     model.compile(loss='mean_squared_error', optimizer=sgd)
     model.summary()
     return model
@@ -57,6 +64,12 @@ def train_model(model: Sequential, print_progress: Boolean = False, random_agent
     opponent_id = State.PLAYER_1 if rl_player_id == State.PLAYER_2 else State.PLAYER_2
 
     board = Board(represented_player=opponent_id)
+    for j in range(4):
+        board.new_move(random.choice(board.legal_moves()))
+    board.print_board_pretty()
+
+    
+    print(select_move(model, board))
     score_list = []
     new_board_states_list = []
     corrected_scores_list = []
@@ -119,27 +132,42 @@ def train_model(model: Sequential, print_progress: Boolean = False, random_agent
 
 if __name__ == '__main__':
     if exists("rl_uttt_model.h5"):
+
         model = keras.models.load_model("rl_uttt_model.h5")
+        print("Model loaded")
     else:
         model = generate_model()
-    board = Board()
-    print(select_move(model, board))
+    
     wins = 0
-    mode_selections = [True, False, True]
+    mode_selections = [True, False, False]
     wins_over_time = []
     easy_wins = 0
+    easy_games = 0
     hard_wins = 0
+    hard_games = 0
     for i in range(1000):
+        print(f"Game number: {i}")
         random_agent = random.choice(mode_selections)
         updated_model,y,result = train_model(model, True, random_agent=random_agent)
+        if(random_agent):
+            easy_games += 1
+        else:
+            hard_games += 1
+
         if result == "Won":
             wins += 1
             if(random_agent):
                 easy_wins += 1
             else:
                 hard_wins += 1
-        if i % 50 == 0:
-            wins_over_time.append([i, wins, easy_wins, hard_wins])
+        print(f"game: {i+1}, wins:{wins}, easy games: {easy_wins}/{easy_games}, hard games: {hard_wins}/{hard_games}")
+        print(easy_games)
+        print(hard_games)
+        if (i+1) % 10 == 0:
+            wins_over_time.append([i, wins, easy_wins/(easy_games if easy_games > 0 else 1), hard_wins/(hard_games if hard_games > 0 else 1)])
+            print(wins_over_time[-1])
+            print(easy_games)
+            print(hard_games)
 
     print(f"\n\n {wins_over_time}")
     print(f"WINS: {wins/1000}\n\n")
